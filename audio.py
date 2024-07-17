@@ -8,6 +8,7 @@ import requests
 
 from pydub import AudioSegment, silence
 from pydub.effects import normalize
+from pydub.playback import play # Just for if want to play audio
 
 # Note: To convert from mp3 to wav need to load both pydub and ffmpeg using
 # (see https://github.com/jiaaro/pydub?tab=readme-ov-file#installation):
@@ -250,9 +251,9 @@ def get_wav_file(qs):
     # Specify meta data for audio
     tags = f'{{"url": "{url}", "copyright": "Cornell Lab Macaulay Library"}}'
 
-    # Convert to wav data
+    # Add tags, make sure bitrate is 48k, and convert to wav data
     buffer = io.BytesIO()
-    sound.export(buffer, format="wav", tags=tags)
+    sound.export(buffer, format="wav", tags=tags, bitrate='48k')
 
     # Store audio in cache
     buffer.seek(0)

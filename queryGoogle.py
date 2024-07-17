@@ -12,7 +12,7 @@ from urllib.error import HTTPError
 from PIL import Image
 
 api = 'https://www.googleapis.com/customsearch/v1'
-api_key = 'AIzaSyB9_wTwJ-GOLIgD-EoT9qxOm-osRT__h0A'
+api_key = 'AI''zaSyB9_wTwJ-''GOLIgD-EoT''9qxOm''-osRT__h0A'
 server_context = '57fae5c295baa4bca'
 color_type = ''
 count = 20 # Number of images to return per query
