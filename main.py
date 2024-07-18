@@ -119,8 +119,8 @@ def handle_request(environ, start_response):
 if __name__ == "__main__":
     # Instantiate the server
     httpd = simple_server.make_server(
-        #'localhost',  # The host name
-        '192.168.0.85', # If want other device on local network to access then need to use local IP, not localhost
+        # 'localhost',  # The host name
+        '192.168.0.85',  # If want other device on local network to access then need to use local IP, not localhost
         8080,  # A port number where to wait for the request
         handle_request  # The application object name, in this case a function
     )
