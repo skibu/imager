@@ -2,6 +2,7 @@ import json
 import os
 import random
 import requests
+import tempfile
 
 from imageProcessor import process_image_for_norns
 
@@ -88,21 +89,21 @@ def load_image(url):
     # Load image and store it into a tmp file. Had to use requests lib and
     # set the headers to look like a browser to get access to certain images
     # where server apparently doesn't want to provide them to a python script.
-    tmp_file = 'tmp.image'
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' + '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'}
+    print(f'Getting image from url={url}')
+    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 '
+                             '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'}
     response = requests.get(url, headers=headers)
-    with open(tmp_file, 'wb') as outfile:
-        outfile.write(response.content)
+    print(f'Storing image into tmp file so that it can be processed')
+    with tempfile.TemporaryFile() as tmp_file:
+        # Store data into file
+        tmp_file.write(response.content)
 
-    # Load image from the file into an Image object so that it can be manipulated
-    img = Image.open(tmp_file)
+        # Load image from the file into an Image object so that it can be manipulated
+        tmp_file.seek(0)
+        img = Image.open(tmp_file)
 
-    # Remove the temporary file
-    os.remove(tmp_file)
-
-    # Convert image so suitable for Norns special display
-    processed_image = process_image_for_norns(img)
+        # Convert image so suitable for Norns special display
+        processed_image = process_image_for_norns(img)
 
     # Add to cache
     _processed_images_cache[url] = processed_image
@@ -130,10 +131,9 @@ def get_image(parsed_qs):
     not_debug = parsed_qs.get('debug') is None
     if not_debug:
         query_str = parsed_qs['q'][0]
-        enhanced_query_str = 'black and white ' + query_str + ' bird flying'
 
         try:
-            items_data = get_image_info(enhanced_query_str)
+            items_data = get_image_info(query_str)
 
             # Determine which random result to use.
             random_index = random.randrange(0, len(items_data))
