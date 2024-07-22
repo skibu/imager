@@ -8,7 +8,8 @@ from urllib.parse import urlparse
 from urllib.parse import parse_qs
 
 import queryGoogle
-from audio import get_species_list_json, get_all_data_json, get_audio_data_json, get_wav_file
+from getJson import get_species_list_json, get_audio_data_json
+from audio import get_wav_file
 
 
 # NOTE: if you get an SSL Certificate error on OSX (Macs) then you need to install
