@@ -1,5 +1,11 @@
+import tempfile
+from io import BytesIO
+
+import requests
 from PIL import Image, ImageOps, ImageEnhance
 from PIL.Image import Quantize
+
+import cache
 
 
 def process_image_for_norns(img: Image, parsed_qs: dict) -> Image:
@@ -178,3 +184,65 @@ def grayscale(img: Image, parsed_qs: dict) -> Image:
         sixteen_color_img_h = sixteen_color_img.histogram()
 
     return sixteen_color_img
+
+
+def load_and_process_image_for_url(url, parsed_qs):
+    """
+    Gets image for the url and processes it. Uses a cache so don't have to process
+    same images again.
+
+    :param url: link to image to load
+    :param parsed_qs: Specifies species for caching. Also, so can pass extra params to process_image_for_norns()
+    :return: the image processed to work on Norns device
+    """
+    # Get from cache if can
+    species = parsed_qs['s'][0]
+    cache_file_name = 'image_' + str(cache.stable_hash(url))
+    cache_suffix = '.png'
+    if cache.file_exists(cache_file_name, cache_suffix, species):
+        # The image is in the cache as a file. But don't want to just return the
+        # data in the file. Instead, need to return an Image. Therefore create
+        # an image using the cache file name.
+        return Image.open(cache.get_filename(cache_file_name, cache_suffix, species))
+
+    # Wasn't in cache so get image via the web.
+    # Load image and store it into a tmp file. Had to use requests lib and
+    # set the headers to look like a browser to get access to certain images
+    # where server apparently doesn't want to provide them to a python script.
+    print(f'Getting image from url={url}')
+    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 '
+                             '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'}
+    response = requests.get(url, headers=headers)
+    # Store image into tmp file so that it can be processed
+    with tempfile.TemporaryFile() as tmp_file:
+        # Store data into file
+        tmp_file.write(response.content)
+
+        # Load image from the file into an Image object so that it can be manipulated
+        tmp_file.seek(0)
+        img = Image.open(tmp_file)
+
+        # Convert image so suitable for Norns special display
+        processed_image = process_image_for_norns(img, parsed_qs)
+
+    # For debugging show each image returned
+    processed_image.show("returned image")
+
+    # Convert Image to bytes and write to cache
+    img_bytes = BytesIO()
+    processed_image.save(img_bytes, 'PNG')
+    img_bytes.seek(0)
+    cache.write_to_cache(img_bytes.read(), cache_file_name, cache_suffix, species)
+
+    return processed_image
+
+
+def load_and_process_image(parsed_qs):
+    """
+    Calls load_and_process_image_for_url using url specified by the query string. Uses cache via
+    load_and_process_image_for_url()
+    :param parsed_qs: query string
+    :return: the image
+    """
+    url = parsed_qs['url'][0]
+    return load_and_process_image_for_url(url, parsed_qs)

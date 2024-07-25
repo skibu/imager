@@ -6,6 +6,8 @@ from pydub import AudioSegment, silence
 from pydub.effects import normalize
 from pydub.playback import play # Just for if want to play audio
 
+import cache
+
 # Note: To convert from mp3 to wav need to load both pydub and ffmpeg using
 # (see https://github.com/jiaaro/pydub?tab=readme-ov-file#installation):
 #  "pip install pydub"
@@ -25,30 +27,28 @@ from pydub.playback import play # Just for if want to play audio
 _audio_cache = {}
 
 
-def get_wav_file(qs):
+def get_wav_file(parsed_qs):
     """
     Gets the mp3 file for the URL specified in the query string and returns wav version of it, since that is what
     Norns requires.
-    :param qs: query string info. The important parameter is 'url' for link to an mp3. Might work with other formats!?!
+    :param parsed_qs: query string info. The important parameter is 'url' for link to an mp3. Might work with other formats!?!
+    Also provides species name 's' which is used in caching
     :return: bytes that contains the wav data
     """
 
     # Constants
     max_clip_start_msec = 10000 # For when voice intro ends and actual bird sounds start
 
-    # If mp3 file not specified then return None
-    url_param = qs.get('url')
-    if url_param is None or len(url_param) == 0:
-        return None
-    url = url_param[0]
-
-    global _audio_cache
-    if url in _audio_cache:
-        print(f'Getting audio data from cache for url={url}')
-        return io.BytesIO(_audio_cache[url])
+    # Get from cache if can
+    species = parsed_qs['s'][0]
+    url = parsed_qs['url'][0]
+    cache_file_name = 'audio_' + str(cache.stable_hash(url))
+    cache_suffix = '.wav'
+    if cache.file_exists(cache_file_name, cache_suffix, species):
+        return io.BytesIO(cache.read_from_cache(cache_file_name, cache_suffix, species))
 
     # Determine max length of clip to be returned
-    max_clip_msec_param = qs.get('max_msec')
+    max_clip_msec_param = parsed_qs.get('max_msec')
     if max_clip_msec_param is None or len(max_clip_msec_param) == 0:
         max_clip_msec = 30000 # Default value
     else:
@@ -87,6 +87,6 @@ def get_wav_file(qs):
     # Store audio in cache
     buffer.seek(0)
     buffer_bytes = buffer.read()
-    _audio_cache[url] = buffer_bytes
+    cache.write_to_cache(buffer_bytes, cache_file_name, cache_suffix, species)
 
     return buffer

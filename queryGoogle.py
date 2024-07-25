@@ -1,16 +1,13 @@
 import json
 import os
 import random
-import requests
-import tempfile
 
-from imageProcessor import process_image_for_norns
+from imageProcessor import load_and_process_image_for_url
 
 from urllib.request import urlopen
 from urllib.parse import quote
 from urllib.error import HTTPError
 
-from PIL import Image
 
 api = 'https://www.googleapis.com/customsearch/v1'
 api_key = 'AI''zaSyB9_wTwJ-''GOLIgD-EoT''9qxOm''-osRT__h0A'
@@ -18,72 +15,20 @@ server_context = '57fae5c295baa4bca'
 color_type = ''
 count = 20 # Number of images to return per Google Search API query
 
-# 'imgColorType=gray' NOTE: gray might limit pics to silly drawings. Probably better to use photos
-# and then grey scale them.
-
-# The caches
-_image_info_cache = {}
-_processed_images_cache = {}
-
-
-def load_and_process_image(url, parsed_qs):
-    """
-    Gets image for the url and processes it. Uses a cache so don't have to process
-    same images again.
-
-    :param url: link to image to load
-    :param parsed_qs: so can pass extra params to process_image_for_norns()
-    :return: the image processed to work on Norns device
-    """
-    # Get from cache if can
-    global _processed_images_cache
-    if url in _processed_images_cache:
-        print(f'Using processed image from cache for url={url}')
-        # For debugging show each image returned
-        _processed_images_cache[url].show("returned image")
-        return _processed_images_cache[url]
-
-    # Wasn't in cache so get image via the web.
-    # Load image and store it into a tmp file. Had to use requests lib and
-    # set the headers to look like a browser to get access to certain images
-    # where server apparently doesn't want to provide them to a python script.
-    print(f'Getting image from url={url}')
-    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 '
-                             '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'}
-    response = requests.get(url, headers=headers)
-    # Store image into tmp file so that it can be processed
-    with tempfile.TemporaryFile() as tmp_file:
-        # Store data into file
-        tmp_file.write(response.content)
-
-        # Load image from the file into an Image object so that it can be manipulated
-        tmp_file.seek(0)
-        img = Image.open(tmp_file)
-
-        # Convert image so suitable for Norns special display
-        processed_image = process_image_for_norns(img, parsed_qs)
-
-    # For debugging show each image returned
-    processed_image.show("returned image")
-
-    # Add to cache
-    _processed_images_cache[url] = processed_image
-
-    return processed_image
-
 
 def scrape_google_for_images(query_str):
     """
     Scrapes the regular google.com search site to get list of urls for images that match
     the query string. The nice thing about this method is that it doesn't need API key and
     is therefore not rate limited.
-    :param query_str: what images to search for
+    :param query_str: what images to search for. Can be something like
+    "site:ebird.org OR site:macaulaylibrary.org image brown pelican flying"
     :return: List of URLs of related images
     """
     # Create proper URL to scrape google search. Restricting results to ebird.org
     # and macaulaylibrary.org sos that get good pics. And need to specify more than
     # just single ebird.org to get back from google urls of the images.
-    q = quote(f'site:ebird.org OR site:macaulaylibrary.org image {query_str}')
+    q = quote(query_str)
     url = f'https://www.google.com/search?q={q}'
 
     # Query google search
@@ -137,64 +82,58 @@ def query_google_images_api(query_str):
     return image_urls
 
 
-def get_url_list_for_query(query_str):
+def get_url_list_for_image_search_query(query_str):
     """
-    Gets list of URLs for the original images specified by the query params. Uses a cache so that don't have to keep
-    hitting search engine so much.
+    Gets list of URLs for the original images specified by the query params.
     :param query_str: what images to search for
     :return: the list of urls for the original images
     """
 
-    # Get from cache if can
-    global _image_info_cache
-    if query_str in _image_info_cache:
-        print(f'Getting image list info from cache for query={query_str}')
-        return _image_info_cache[query_str]
-
     # Wasn't in cache so get URLs from search engine.
-    # First try scraping the regular Google search site. If that doesn't work
-    # then try the Google Search API
+    # First try the Google Search API since that provides more results. But if the API call
+    # fails, likely due to more than 100 hits in a day, they try scraping the regular Google
+    # search site.
+    print(f'Searching for images using "{query_str}"')
     try:
-        image_urls = scrape_google_for_images(query_str)
-        if len(image_urls) == 0:
-            image_urls = query_google_images_api(query_str)
-
-        # Add Google API info for the query_str to cache
-        _image_info_cache[query_str] = image_urls
+        image_urls = query_google_images_api(query_str)
     except HTTPError as err:
-        # Will use default url for an image so at least get something
-        default_link = 'https://www.allaboutbirds.org/guide/assets/photo/304461551-480px.jpg'
-        print(f'Error occurred trying to access Google API to find appropriate images. {err}. '
-              f'Using default link {default_link}')
-        image_urls = []
-        image_urls.append(default_link)
-        return image_urls
+        print('Got error using the Google API. Therefore trying scraping Google as backup.')
+        image_urls = scrape_google_for_images(query_str)
+        if image_urls is None or len(image_urls) == 0:
+            # Will use default url for an image so at least get something
+            default_link = 'https://www.allaboutbirds.org/guide/assets/photo/304461551-480px.jpg'
+            print(f'Error occurred trying to access Google API to find appropriate images. {err}. '
+                  f'Using default link {default_link}')
+            image_urls = [default_link]
+            return image_urls
 
     return image_urls
 
 
-def get_image(parsed_qs):
+def get_random_image_for_query(parsed_qs):
     """
-    Does a query to find urls of appropriate images.Then picks a random
+    Does a Google query to find urls of appropriate images. Then picks a random
     URL and loads and processes the image so the png  can be used on a Norns.
 
-    :param parsed_qs:
+    :param parsed_qs: the query string info from the request. The 'q' param
+    specifies the Google search to be done, like "image brown pelican flying".
+    Should also contain 's' param to specify the species.
     :return: processed image as a PNG made suitable for Norns device
     """
     # Determine the link for the image to use
     query_str = parsed_qs['q'][0]
 
     # Get list of URLs for the images as specified by the query_str
-    image_urls = get_url_list_for_query(query_str)
+    image_urls = get_url_list_for_image_search_query(query_str)
 
     # Determine which random result to use.
     random_index = random.randrange(0, len(image_urls))
 
-    link = image_urls[random_index]
-    print(f'For query_str="{query_str}" random_index={random_index} so using URL {link}')
+    url = image_urls[random_index]
+    print(f'For query_str="{query_str}" random_index={random_index} so using URL {url}')
 
     # Get the image and process it. Will use cache
-    img = load_and_process_image(link, parsed_qs)
+    img = load_and_process_image_for_url(url, parsed_qs)
 
     # Return the processed image
     return img

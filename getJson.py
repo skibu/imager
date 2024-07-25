@@ -1,8 +1,12 @@
 import collections
 import json
+from types import SimpleNamespace
 
+import queryGoogle
 from bs4 import BeautifulSoup
 import requests
+
+import cache
 
 # Note: need this hack because BeautifulSoup doesn't work with Python 3.10+
 # Discussion at
@@ -73,21 +77,13 @@ def get_species_data():
     return rows_data
 
 
-# Global cache
-_species_dict_cache = None
-
-
 def get_species_dictionary():
     """
-    Data dictionary is keyed on species name and value is list of all the info for the species. Cached.
+    Data dictionary is keyed on species name and value is list of all the info for the species.
+    Not cached since the calling methods cache it. But I'm not confident this is truly the best
+    thing to do.
     :return: the data dictionary
     """
-    # If already cached, return it
-    global _species_dict_cache
-    if _species_dict_cache is not None:
-        print("Returning species dictionary from cache")
-        return _species_dict_cache
-
     # Add each species data to the species dictionary
     print("Creating species dictionary...")
     species_dict = dict()
@@ -98,14 +94,7 @@ def get_species_dictionary():
             species_dict[species_data['species']] = list_for_species
         list_for_species.append(species_data)
 
-    # Save in cache
-    _species_dict_cache = species_dict
-
     return species_dict
-
-
-# Global caches
-_species_list_cache = None
 
 
 def get_sorted_all_data_list():
@@ -113,11 +102,11 @@ def get_sorted_all_data_list():
     Returns list of all species in alphabetical order. For each species there is a list of the calls. Caches the data.
     :return: list of all data, ordered alphabetically by species
     """
-    # If already cached, return it
-    global _species_list_cache
-    if _species_list_cache is not None:
-        print("Returning species list from cache")
-        return _species_list_cache
+    # Try getting from cache first
+    cache_file_name = "speciesAndAudioList.json"
+    if cache.file_exists(cache_file_name):
+        json_data = cache.read_from_cache(cache_file_name)
+        return json.loads(json_data, object_hook=lambda d: SimpleNamespace(**d))
 
     print("Determining species list...")
     species_dictionary = get_species_dictionary()
@@ -128,8 +117,9 @@ def get_sorted_all_data_list():
     for species in keys_list:
         all_data_list.append(species_dictionary.get(species))
 
-    # Put in cache
-    _species_list_cache = all_data_list
+    # Write to cache
+    json_data = json.dumps(all_data_list, indent=4)
+    cache.write_to_cache(json_data, cache_file_name)
 
     return all_data_list
 
@@ -139,6 +129,11 @@ def get_species_list_json():
     Returns JSON version of species list in alphabetical order.
     :return: species list
     """
+    # Try getting from cache first
+    cache_file_name = "speciesList.json"
+    if cache.file_exists(cache_file_name):
+        return cache.read_from_cache(cache_file_name)
+
     all_data_list = get_sorted_all_data_list()
     species_list = []
     for a_species in all_data_list:
@@ -146,10 +141,17 @@ def get_species_list_json():
         a_call_for_species = a_species[0]
         species_list.append(a_call_for_species['species'])
 
-    return json.dumps(species_list, indent=4)
+    # Convert to JSON
+    json_data = json.dumps(species_list, indent=4)
+
+    # Write to cache
+    cache.write_to_cache(json_data, cache_file_name)
+
+    # Return the results in JSON
+    return json_data
 
 
-def get_all_data_json():
+def get_all_species_audio_data_json():
     """
     Returns all audio track data in json format
     :return: all data in json format
@@ -159,7 +161,7 @@ def get_all_data_json():
 
 def get_audio_data_json(qs):
     """
-    Gets audio data for specified species. If species not specified then returns
+    Gets list of audio data for specified species. If species not specified then returns
     data for all species.
     :param qs: query string info. The parameter is 's' for species
     :return: JSON data for the species specified
@@ -168,11 +170,50 @@ def get_audio_data_json(qs):
 
     # If species not specified return data for all species
     if species_param is None or len(species_param) == 0:
-        return get_all_data_json()
+        return get_all_species_audio_data_json()
+    species = species_param[0]
 
-    species_name = species_param[0]
+    # First try getting from cache
+    cache_file_name = 'audioUrlsForSpecies'
+    cache_suffix = '.json'
+    if cache.file_exists(cache_file_name, cache_suffix, species):
+        return cache.read_from_cache(cache_file_name, cache_suffix, species)
 
     # Get object for specified species
-    data_for_species = get_species_dictionary()[species_name]
+    data_for_species = get_species_dictionary()[species]
 
-    return json.dumps(data_for_species, indent=4)
+    json_data = json.dumps(data_for_species, indent=4)
+
+    # Write to cache
+    cache.write_to_cache(json_data, cache_file_name, cache_suffix, species)
+
+    return json_data
+
+
+def get_image_urls_for_search_json(parsed_qs):
+    """
+    Does a Google query to find urls of appropriate images. Uses cache.
+
+    :param parsed_qs: the query string info from the request. The 'q' param
+    specifies the Google search to be done, like "image brown pelican flying"
+    :return: list of urls of images for the query
+    """
+    # Determine the link for the image to use
+    query_str = parsed_qs['q'][0]
+    species = parsed_qs['s'][0]
+
+    cache_file_name = 'imageUrlsForQuery_' + str(cache.stable_hash(query_str))
+    cache_suffix = '.json'
+    if cache.file_exists(cache_file_name, cache_suffix, species):
+        return cache.read_from_cache(cache_file_name, cache_suffix, species)
+
+    # Get list of URLs for the images as specified by the query_str
+    image_urls = queryGoogle.get_url_list_for_image_search_query(query_str)
+
+    json_data = json.dumps(image_urls, indent=4)
+
+    # Write to cache
+    cache.write_to_cache(json_data, cache_file_name, cache_suffix, species)
+
+    # Return the results in JSON
+    return json_data

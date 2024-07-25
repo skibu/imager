@@ -1,15 +1,15 @@
 #! /usr/bin/env python
 from io import BytesIO
+from urllib.parse import parse_qs
+from urllib.parse import urlparse
+from wsgiref import simple_server
 # Python's bundled WSGI server
 from wsgiref import util
-from wsgiref import simple_server
 
-from urllib.parse import urlparse
-from urllib.parse import parse_qs
-
+import getJson
 import queryGoogle
-from getJson import get_species_list_json, get_audio_data_json
 from audio import get_wav_file
+from imageProcessor import load_and_process_image
 
 
 # NOTE: if you get an SSL Certificate error on OSX (Macs) then you need to install
@@ -49,7 +49,9 @@ def json_response(msg, start_response):
     if len(msg) == 0:
         return error_response('No data for that query', start_response)
 
-    response_body = bytes(msg, 'utf-8')
+    # If the msg is a string then convert to bytes
+    response_body = bytes(msg, 'utf-8') if isinstance(msg, str) else msg
+
     status = '200 OK'
     response_headers = [
         ('Content-Type', 'text/json'),
@@ -103,16 +105,32 @@ def handle_request(environ, start_response):
     # Found that get more appropriate pics if also specify "black and white" and "bird flying"
     parsed_qs = parse_qs(parsed_url.query, keep_blank_values=True)
     match parsed_url.path:
-        case '/getImage':
-            image = queryGoogle.get_image(parsed_qs)
-            return image_response(image, start_response)
         case '/speciesList':
-            return json_response(get_species_list_json(), start_response)
-        case '/audioData':
-            return json_response(get_audio_data_json(parsed_qs), start_response)
+            # Returns in json a list of all species
+            return json_response(getJson.get_species_list_json(), start_response)
+        case '/imageDataForSpecies':
+            # Returns in json a list of image urls for the species. The client app can
+            # then determine which one to use
+            return json_response(getJson.get_image_urls_for_search_json(parsed_qs), start_response)
+        case '/audioDataForSpecies':
+            # Returns in json a list of wav file urls for the species. The client app can
+            # then determine which ones to load.
+            return json_response(getJson.get_audio_data_json(parsed_qs), start_response)
+        case '/randomImage':
+            # Returns png file for specified google image search query. This command might get
+            # deprecated because really think the client should get all possible image urls and
+            # then decide which one to retrieve using /getImage
+            image = queryGoogle.get_random_image_for_query(parsed_qs)
+            return image_response(image, start_response)
+        case '/image':
+            # Returns png file for the specified URL. Query string should specify 'url' and 's' for species.
+            image = load_and_process_image(parsed_qs)
+            return image_response(image, start_response)
         case '/wavFile':
+            # Loads wav file for specified url
             return wav_response(get_wav_file(parsed_qs), start_response)
         case _:
+            # In case unknown command specified
             return error_response('No such command ' + parsed_url.path, start_response)
 
 
