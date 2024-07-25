@@ -1,3 +1,4 @@
+import gzip
 import io
 from io import BytesIO
 import requests
@@ -33,7 +34,7 @@ def get_wav_file(parsed_qs):
     Norns requires.
     :param parsed_qs: query string info. The important parameter is 'url' for link to an mp3. Might work with other formats!?!
     Also provides species name 's' which is used in caching
-    :return: bytes that contains the wav data
+    :return: bytes that contains the wav data. The data is always gzipped to reduce the size of the large files.
     """
 
     # Constants
@@ -43,7 +44,7 @@ def get_wav_file(parsed_qs):
     species = parsed_qs['s'][0]
     url = parsed_qs['url'][0]
     cache_file_name = 'audio_' + str(cache.stable_hash(url))
-    cache_suffix = '.wav'
+    cache_suffix = '.wav.gz'
     if cache.file_exists(cache_file_name, cache_suffix, species):
         return io.BytesIO(cache.read_from_cache(cache_file_name, cache_suffix, species))
 
@@ -87,6 +88,7 @@ def get_wav_file(parsed_qs):
     # Store audio in cache
     buffer.seek(0)
     buffer_bytes = buffer.read()
-    cache.write_to_cache(buffer_bytes, cache_file_name, cache_suffix, species)
+    compressed_bytes = gzip.compress(buffer_bytes)
+    cache.write_to_cache(compressed_bytes, cache_file_name, cache_suffix, species)
 
     return buffer

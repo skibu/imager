@@ -1,4 +1,6 @@
 #! /usr/bin/env python
+import gzip
+import io
 from io import BytesIO
 from urllib.parse import parse_qs
 from urllib.parse import urlparse
@@ -20,28 +22,40 @@ from imageProcessor import load_and_process_image
 # NOTE: had to install webscraper "pip install html-table-parser-python3"
 
 
-def wav_response(wav_data, start_response):
+def wav_response(wav_data, start_response, http_accept_encoding):
     """
-    Creates a http response for a wav audio file
-    :param wav_data: IOBytes
+    Creates a http response for a wav audio file. Can return either compressed
+    or uncompressed data, depending on the request Content-Encoding header.
+    :param wav_data: IOBytes the data, in compressed format, to be returned
     :param start_response:
-    :return:
+    :param http_accept_encoding: so can determine if should reply with compression or not
+    :return: IOBytes containing the data bytes for the full reply
     """
     if wav_data is None:
         return error_response("Could not load image", start_response)
 
-    # Return object as a PNG (though should already be a PNG)
-    wav_data.seek(0)
-    content_length = wav_data.getbuffer().nbytes
-
     status = '200 OK'
-    response_headers = [
-        ('Content-Type', 'audio/wav'),
-        ('Content-Length', str(content_length))
-    ]
-    start_response(status, response_headers)
+    response_headers = [('Content-Type', 'audio/wav')]
+    wav_data.seek(0)
+    return_data = wav_data
 
-    return wav_data
+    # If gzip compression is accepted then send back already compressed wav data
+    if 'gzip' in http_accept_encoding:
+        # Using compression
+        response_headers.append(('Content-Encoding', 'gzip'))
+    else:
+        # Request not accepting compressed data so need to need to uncompress the compressed wav data
+        # and use it as return_data
+        uncompressed_bytes = gzip.decompress(wav_data.read())
+        return_data = io.BytesIO(uncompressed_bytes)
+
+    # Finish up the response headers
+    content_length = return_data.getbuffer().nbytes
+    response_headers.append(('Content-Length', str(content_length)))
+
+    # Deal with the response
+    start_response(status, response_headers)
+    return return_data
 
 
 def json_response(msg, start_response):
@@ -128,7 +142,7 @@ def handle_request(environ, start_response):
             return image_response(image, start_response)
         case '/wavFile':
             # Loads wav file for specified url
-            return wav_response(get_wav_file(parsed_qs), start_response)
+            return wav_response(get_wav_file(parsed_qs), start_response, environ['HTTP_ACCEPT_ENCODING'])
         case _:
             # In case unknown command specified
             return error_response('No such command ' + parsed_url.path, start_response)
