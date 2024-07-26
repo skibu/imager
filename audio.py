@@ -32,8 +32,8 @@ def get_wav_file(parsed_qs):
     """
     Gets the mp3 file for the URL specified in the query string and returns wav version of it, since that is what
     Norns requires.
-    :param parsed_qs: query string info. The important parameter is 'url' for link to an mp3. Might work with other formats!?!
-    Also provides species name 's' which is used in caching
+    :param parsed_qs: query string info. The important parameter is 'url' for link to an mp3. Might work with other
+    formats!?! Also provides species name 's' which is used in caching
     :return: bytes that contains the wav data. The data is always gzipped to reduce the size of the large files.
     """
 
