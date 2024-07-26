@@ -141,8 +141,9 @@ def handle_request(environ, start_response):
             image = load_and_process_image(parsed_qs)
             return image_response(image, start_response)
         case '/wavFile':
-            # Loads wav file for specified url
-            return wav_response(get_wav_file(parsed_qs), start_response, environ['HTTP_ACCEPT_ENCODING'])
+            # Loads wav file for specified url and species
+            http_accept_encoding = environ['HTTP_ACCEPT_ENCODING'] if 'HTTP_ACCEPT_ENCODING' in environ else ''
+            return wav_response(get_wav_file(parsed_qs), start_response, http_accept_encoding)
         case _:
             # In case unknown command specified
             return error_response('No such command ' + parsed_url.path, start_response)
