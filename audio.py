@@ -43,7 +43,7 @@ def get_wav_file(parsed_qs):
     # Get from cache if can
     species = parsed_qs['s'][0]
     url = parsed_qs['url'][0]
-    cache_file_name = 'audio_' + str(cache.stable_hash(url))
+    cache_file_name = 'audio_' +cache.stable_hash_str(url)
     cache_suffix = '.wav.gz'
     if cache.file_exists(cache_file_name, cache_suffix, species):
         return io.BytesIO(cache.read_from_cache(cache_file_name, cache_suffix, species))

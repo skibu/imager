@@ -202,7 +202,7 @@ def get_image_urls_for_search_json(parsed_qs):
     query_str = parsed_qs['q'][0]
     species = parsed_qs['s'][0]
 
-    cache_file_name = 'imageUrlsForQuery_' + str(cache.stable_hash(query_str))
+    cache_file_name = 'imageUrlsForQuery_' + cache.stable_hash_str(query_str)
     cache_suffix = '.json'
     if cache.file_exists(cache_file_name, cache_suffix, species):
         return cache.read_from_cache(cache_file_name, cache_suffix, species)

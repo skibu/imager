@@ -197,7 +197,7 @@ def load_and_process_image_for_url(url, parsed_qs):
     """
     # Get from cache if can
     species = parsed_qs['s'][0]
-    cache_file_name = 'image_' + str(cache.stable_hash(url))
+    cache_file_name = 'image_' + cache.stable_hash_str(url)
     cache_suffix = '.png'
     if cache.file_exists(cache_file_name, cache_suffix, species):
         # The image is in the cache as a file. But don't want to just return the

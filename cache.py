@@ -3,15 +3,15 @@ import hashlib
 import os
 
 
-def stable_hash(key: str) -> int:
+def stable_hash_str(key: str) -> str:
     """
     A hash function that is consistent across restarts. That is of course important for file names for a cache.
-    :param key: string to be hashed. abs(hash) is returned so that don't get a peculiar '-' at the beginning.
-    :return: the hash
+    :param key: string to be hashed.
+    :return: a 16 character hash string
     """
     str_bytes = bytes(key, "UTF-8")
     m = hashlib.md5(str_bytes)
-    return abs(int(m.hexdigest(), base=16))
+    return m.hexdigest()[:16].upper()
 
 
 def proper_filename(filename):
