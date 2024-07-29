@@ -72,7 +72,7 @@ def file_exists(filename, suffix='', subdir=''):
     :param subdir: subdirectory. Useful if want to add species
     :return: true if file exists
     """
-    exists =  os.path.isfile(get_full_filename(filename, suffix, subdir))
+    exists = os.path.isfile(get_full_filename(filename, suffix, subdir))
 
     if not exists:
         print(f'File {filename}{suffix} does not exist in cache so will need to create the data')
@@ -88,7 +88,7 @@ def read_from_cache(filename, suffix='', subdir=''):
     :param filename: if URL should use str(hash(url))
     :param suffix: blank if specified in name. Otherwise .wav, .png, or .json, etc
     :param subdir: subdirectory. Useful if want to add species
-    :return: the str sdata stored in the file
+    :return: the str data stored in the file
     """
     full_filename = get_full_filename(filename, suffix, subdir)
     print(f'Reading cache file={full_filename}')
@@ -96,3 +96,14 @@ def read_from_cache(filename, suffix='', subdir=''):
     data = file.read()
     file.close()
     return data
+
+
+def erase_cache():
+    """
+    Does system call to remove all the server side cache files. This was fresh data can be generated and used.
+    Important for if update the supplementalSpeciesConfig.json file.
+    :return:
+    """
+    dir_name = get_full_filename('')
+    os.system(f'rm {dir_name}*Cache.json')
+    os.system(f'rm {dir_name}*/*Cache.json')
