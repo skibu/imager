@@ -1,12 +1,13 @@
 import collections
 import json
-from types import SimpleNamespace
+import json.decoder
 from typing import Any
 
 import requests
 from bs4 import BeautifulSoup
 
 import cache
+from queryGoogle import query_google_images_api
 
 # Note: need this hack because BeautifulSoup doesn't work with Python 3.10+
 # Discussion at
@@ -19,12 +20,12 @@ class EBird:
         """
         Loads in the key data at startup so that requests are fast
         """
-        groups = self.__get_groups_dictionary()
-        print(groups)
+        self.__get_groups_dictionary()
 
     def __get_species_code(self, species_name):
         """
-        Looks up and returns the species code needed for scraping ebird site
+        Looks up and returns the species ebird code needed for scraping ebird site. An example is
+        "ameavo" for the "American Avocet" species. Also called the taxonCode by ebird site.
         :param species_name:
         :return: species code
         """
@@ -182,7 +183,7 @@ class EBird:
                 .replace('Western/Eastern ', '')
                 .replace('Western Flycatcher (Cordilleran)', 'Cordilleran Flycatcher')
                 .lower())
-    
+
     def __get_track_data(self):
         """
         Loads in audio "track" data from Macaulay Library (Ithaca) and puts it into
@@ -249,9 +250,10 @@ class EBird:
 
         return rows_data
 
-    def __get_species_dictionary(self):
+    def __get_species_tracks_dictionary(self):
         """
-        Data dictionary is keyed on species name and value is list of all the info for the species.
+        Data dictionary is keyed on species name and value is list of audio tracks for the species.
+        Raw data & track info is from https://www.macaulaylibrary.org/guide-to-bird-sounds/track-list/
         Not cached since the calling methods cache it. But I'm not confident this is truly the best
         thing to do.
         :return: the data dictionary
@@ -272,7 +274,8 @@ class EBird:
 
     def __get_taxonomy_dictionary(self):
         """
-        Gets as a dictionary the taxonomy of all bird species. Gets it from the ebird site. But caches
+        Gets as a dictionary the taxonomy of all bird species (~30k!) from the ebird site. Includes ebird
+        taxonomy name, which is needed for looking up best images and audio clips on ebird. Caches
         the dictionary so don't need to keep hitting the ebird site.
         :return: taxonomy of all bird species. A dictionary keyed by unified species name and containing basic
         info about the species. unified_species_name = self.__unified_name(species_name)
@@ -282,7 +285,7 @@ class EBird:
             return self.__taxonomy_dictionary_cache
 
         # Try getting from file cache
-        cache_file_name = "all_species_taxonomy_dictionary.json"
+        cache_file_name = "allEbirdSpeciesTaxonomyDictionaryCache.json"
         if cache.file_exists(cache_file_name):
             json_data = cache.read_from_cache(cache_file_name)
             return json.loads(json_data)
@@ -306,7 +309,7 @@ class EBird:
             unified_species_name = self.__unified_name(species_name)
 
             species = {
-                "name": species_name,
+                "speciesName": species_name,
                 "speciesCode": full_species['speciesCode'],
                 "sciName": full_species['sciName'],
                 "groupName": full_species['familyComName']}
@@ -320,48 +323,91 @@ class EBird:
 
         return taxonomy_dict
 
+    __supplemental_species_config_cache = None
+
+    def __supplemental_species_config(self):
+        """
+        Reads in supplemental species config file supplementalSpeciesConfig.json
+        :return: data for the supplemental species
+        """
+        if self.__supplemental_species_config_cache is not None:
+            return self.__supplemental_species_config_cache
+
+        # Read in and convert JSON to a python object
+        json_data = cache.read_from_cache('supplementalSpeciesConfig.json')
+        try:
+          supplemental_species = json.loads(json_data)
+        except json.decoder.JSONDecodeError as err:
+            print(f'Error parsing supplementalSpeciesConfig.json {err}')
+            return {}
+
+        # Convert to a dictionary so can look up data by species_name easily
+        supplemental_species_dict = {}
+        for species in supplemental_species:
+            supplemental_species_dict[species['speciesName']] = species
+
+        # Cache result
+        __supplemental_species_config_cache = supplemental_species_dict
+
+        return supplemental_species_dict
+
+    def __add_species_to_group(self, species_name, group_name, groups):
+        if group_name not in groups:
+            species_list_for_group = [species_name]
+            groups[group_name] = species_list_for_group
+        else:
+            species_list_for_group = groups[group_name]
+            species_list_for_group.append(species_name)
+
     __groups_dictionary_cache = None
 
     def __get_groups_dictionary(self):
         """
         Provides the group list for the species specified in the species_list. Each group is a list of
         species names within that group.
-        :return: dictionary of all groups. Keyed by group name and containing values of all species names
-        for that group
+        :return: dictionary of all groups. Keyed by group name and containing values of list of all
+        species names for that group
         """
-        # Return cached value if exists
+        # Return memory cached value if exists
         if self.__groups_dictionary_cache is not None:
             return self.__groups_dictionary_cache
 
-        # So that can limit which species are listed
-        species_name_list = self.__get_species_name_list()
+        # Use file cache if it exists
+        cache_file_name = 'groupsCache.json'
+        if cache.file_exists(cache_file_name):
+            json_data = cache.read_from_cache(cache_file_name)
+            return json.loads(json_data)
 
-        taxonomy = self.__get_taxonomy_dictionary()
+        print("Generating the groups dictionary...")
 
-        # groups is a dictionary keyed on group name and containing list of species names
+        # The return value. groups is a dictionary keyed on group name and containing list of species names
         groups = {}
 
-        # For each species name passed in
+        # So that can limit which species are listed
+        species_name_list = self.__get_species_name_list()
+        taxonomy = self.__get_taxonomy_dictionary()
+
+        # For each species name from __get_species_name_list...
         for species_name in species_name_list:
+            # Get the species info from the taxonomy data
             uni_name = self.__unified_name(species_name)
-            # If can't find this species, even using unified name, in the taxonomy, then skip it
             if uni_name not in taxonomy:
-                print(f'Couldn\'t find species "{species_name}" in taxonomy so skipping it.')
+                # If can't find this species, even using unified name, in the taxonomy, then skip it
+                print(f'Could not find species "{species_name}" in taxonomy so skipping it.')
                 continue
             species = taxonomy[uni_name]
+
+            # Add the group name to the groups dictionary
             group_name = species['groupName']
+            self.__add_species_to_group(species_name, group_name, groups)
 
-            if group_name not in groups:
-                species_list_for_group = [species_name]
-                groups[group_name] = species_list_for_group
-            else:
-                species_list_for_group = groups[group_name]
-                species_list_for_group.append(species_name)
+        # Read in and add the supplemental data to the groups object
+        supplemental_species = self.__supplemental_species_config()
+        for species in supplemental_species.values():
+            self.__add_species_to_group(species['speciesName'], species['groupName'], groups)
 
-        # Write the full_taxonomy json to cache file in nice format by dumping object into json string
-        cache_file_name = 'groups.json'
+        # Write groups to cache
         cache.write_to_cache(json.dumps(groups, indent=4), cache_file_name)
-        print(f"Wrote groups dictionary to cache file={cache_file_name}")
 
         # Store in memory cache
         self.__groups_dictionary_cache = groups
@@ -375,14 +421,13 @@ class EBird:
         :return: list of all data, ordered alphabetically by species
         """
         # Try getting from cache first
-        cache_file_name = "speciesTrackList.json"
+        cache_file_name = "speciesTracksListCache.json"
         if cache.file_exists(cache_file_name):
             json_data = cache.read_from_cache(cache_file_name)
-            #return json.loads(json_data, object_hook=lambda d: SimpleNamespace(**d))
             return json.loads(json_data)
 
         print("Determining speciesTrackList...")
-        species_dictionary = self.__get_species_dictionary()
+        species_dictionary = self.__get_species_tracks_dictionary()
         keys_list = list(species_dictionary.keys())
         keys_list.sort()
 
@@ -423,7 +468,7 @@ class EBird:
             return self.__species_names_list_cache
 
         # Try getting from cache first
-        cache_file_name = "speciesNamesList.json"
+        cache_file_name = "speciesNamesListCache.json"
         if cache.file_exists(cache_file_name):
             return cache.read_from_cache(cache_file_name)
 
@@ -456,15 +501,14 @@ class EBird:
             return self.__group_names_list_cache
 
         # Try getting from cache first
-        cache_file_name = "groupNamesList.json"
+        cache_file_name = "groupNamesListCache.json"
         if cache.file_exists(cache_file_name):
             return cache.read_from_cache(cache_file_name)
 
         print('Determining group list json...')
 
         # Get the group info
-        species_name_list = self.__get_species_name_list()
-        groups_dict = self.__get_groups_dictionary(species_name_list)
+        groups_dict = self.__get_groups_dictionary()
 
         # Put group names into an array
         group_names = []
@@ -491,25 +535,41 @@ class EBird:
         :return: json str containing info for species
         """
         # Return info from cache if available
-        cache_file_name = 'speciesData.json'
+        cache_file_name = 'speciesDataCache.json'
         if cache.file_exists(cache_file_name, subdir=species_name):
             return cache.read_from_cache(cache_file_name, subdir=species_name)
 
-        # First need to get all the info for the species
-        print(f'Determining data for species={species_name}...')
-        taxonomy_dict = self.__get_taxonomy_dictionary()
-        unified_species_name = self.__unified_name(species_name)
-        if unified_species_name not in taxonomy_dict:
-            print(f'Species={species_name} not found in ebird.get_species_info()')
-            return None
-        species_data = taxonomy_dict[unified_species_name]
+        print(f'get_species_info() generating data for species={species_name}...')
 
-        # Add info for images and audio
-        image_data_list = self.__get_image_data_list_for_species(species_name)
-        species_data['image_data_list'] = image_data_list
+        # First, see if info for this species is in the supplemental file. This
+        # way the supplemental file can override what is automatically determined
+        # using ebird data.
+        supplemental_species_dict = self.__supplemental_species_config()
+        if species_name in supplemental_species_dict:
+            # Use supplemental info
+            supplemental_species = supplemental_species_dict.get(species_name)
+            image_search_query = supplemental_species['imageSearchQuery']
+            image_list = query_google_images_api(image_search_query)
+            species_data = {
+                "speciesName": supplemental_species['speciesName'],
+                "groupName": supplemental_species['groupName'],
+                "imageDataList": image_list,
+                "audioDataList": supplemental_species['mp3s']}
+        else:
+            # Get all the ebird info for the species
+            taxonomy_dict = self.__get_taxonomy_dictionary()
+            unified_species_name = self.__unified_name(species_name)
+            if unified_species_name not in taxonomy_dict:
+                print(f'Species={species_name} not found in ebird.get_species_info()')
+                return None
+            species_data = taxonomy_dict[unified_species_name]
 
-        audio_data_list = self.__get_audio_data_list_for_species(species_name)
-        species_data['audio_data_list'] = audio_data_list
+            # Add info for images and audio
+            image_data_list = self.__get_image_data_list_for_species(species_name)
+            species_data['imageDataList'] = image_data_list
+
+            audio_data_list = self.__get_audio_data_list_for_species(species_name)
+            species_data['audioDataList'] = audio_data_list
 
         # Convert the species data into json
         json_data = json.dumps(species_data, indent=4)
@@ -520,7 +580,16 @@ class EBird:
         return json_data
 
     def get_species_for_group_json(self, group_name):
+        """
+        Returns json consisting of list of species for the specified group
+        :param group_name:
+        :return: list of species for group
+        """
         groups_dict = self.__get_groups_dictionary()
+
+        if group_name not in groups_dict:
+            return f'Error: group {group_name} does not exist'
+
         species_list = groups_dict[group_name]
         json_data = json.dumps(species_list, indent=4)
         return json_data
