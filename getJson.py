@@ -9,6 +9,7 @@ from ebird import ebird
 
 def get_all_species_audio_data_json():
     """
+    DEPRECATED
     Returns all audio track data in json format
     :return: all data in json format
     """
@@ -17,6 +18,7 @@ def get_all_species_audio_data_json():
 
 def get_audio_data_json(qs):
     """
+    DEPRECATED
     Gets list of audio data for specified species. If species not specified then returns
     data for all species.
     :param qs: query string info. The parameter is 's' for species
@@ -36,7 +38,7 @@ def get_audio_data_json(qs):
         return cache.read_from_cache(cache_file_name, cache_suffix, species)
 
     # Get object for specified species
-    data_for_species = ebird.__get_species_dictionary()[species]
+    data_for_species = ebird.__get_species_tracks_dictionary()[species]
 
     json_data = json.dumps(data_for_species, indent=4)
 
@@ -48,6 +50,7 @@ def get_audio_data_json(qs):
 
 def get_image_urls_for_search_json(parsed_qs):
     """
+    DEPRECATED
     Does a Google query to find urls of appropriate images. Uses cache.
 
     :param parsed_qs: the query string info from the request. The 'q' param
