@@ -8,8 +8,7 @@ from wsgiref import simple_server
 # Python's bundled WSGI server
 from wsgiref import util
 
-import getJson
-import queryGoogle
+import cache
 from audio import get_wav_file
 from ebird import ebird
 from imageProcessor import load_and_process_image
@@ -125,7 +124,7 @@ def handle_request(environ, start_response):
             return json_response(ebird.get_species_list_json(), start_response)
         case '/groupsList':
             # Returns in json a list of all species
-            return json_response(ebird.get_grs_groupst_json(), start_response)
+            return json_response(ebird.get_group_list_json(), start_response)
         case '/speciesForGroup':
             return json_response(ebird.get_species_for_group_json(parsed_qs['g'][0]), start_response)
         case '/dataForSpecies':
@@ -140,6 +139,10 @@ def handle_request(environ, start_response):
             # Loads wav file for specified url and species
             http_accept_encoding = environ['HTTP_ACCEPT_ENCODING'] if 'HTTP_ACCEPT_ENCODING' in environ else ''
             return wav_response(get_wav_file(parsed_qs), start_response, http_accept_encoding)
+        case '/eraseCache':
+            # Gets rid of all the *Cache.json files so that new data will be used
+            cache.erase_cache()
+            return json_response('Cache cleared', start_response)
         case _:
             # In case unknown command specified
             return error_response('No such command ' + parsed_url.path, start_response)
