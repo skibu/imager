@@ -131,7 +131,7 @@ def handle_request(environ, start_response):
             # Returns in json a list of image urls for the species. The client app can
             # then determine which one to use
             return json_response(ebird.get_species_info(parsed_qs['s'][0]), start_response)
-        case '/image':
+        case '/pngFile':
             # Returns png file for the specified URL. Query string should specify 'url' and 's' for species.
             image = load_and_process_image(parsed_qs)
             return image_response(image, start_response)
