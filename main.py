@@ -11,6 +11,7 @@ from wsgiref import util
 import getJson
 import queryGoogle
 from audio import get_wav_file
+from ebird import ebird
 from imageProcessor import load_and_process_image
 
 
@@ -121,21 +122,16 @@ def handle_request(environ, start_response):
     match parsed_url.path:
         case '/speciesList':
             # Returns in json a list of all species
-            return json_response(getJson.get_species_list_json(), start_response)
-        case '/imageDataForSpecies':
+            return json_response(ebird.get_species_list_json(), start_response)
+        case '/groupsList':
+            # Returns in json a list of all species
+            return json_response(ebird.get_grs_groupst_json(), start_response)
+        case '/speciesForGroup':
+            return json_response(ebird.get_species_for_group_json(parsed_qs['g'][0]), start_response)
+        case '/dataForSpecies':
             # Returns in json a list of image urls for the species. The client app can
             # then determine which one to use
-            return json_response(getJson.get_image_urls_for_search_json(parsed_qs), start_response)
-        case '/audioDataForSpecies':
-            # Returns in json a list of wav file urls for the species. The client app can
-            # then determine which ones to load.
-            return json_response(getJson.get_audio_data_json(parsed_qs), start_response)
-        case '/randomImage':
-            # Returns png file for specified google image search query. This command might get
-            # deprecated because really think the client should get all possible image urls and
-            # then decide which one to retrieve using /getImage
-            image = queryGoogle.get_random_image_for_query(parsed_qs)
-            return image_response(image, start_response)
+            return json_response(ebird.get_species_info(parsed_qs['s'][0]), start_response)
         case '/image':
             # Returns png file for the specified URL. Query string should specify 'url' and 's' for species.
             image = load_and_process_image(parsed_qs)

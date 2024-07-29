@@ -203,7 +203,7 @@ def load_and_process_image_for_url(url, parsed_qs):
         # The image is in the cache as a file. But don't want to just return the
         # data in the file. Instead, need to return an Image. Therefore create
         # an image using the cache file name.
-        return Image.open(cache.get_filename(cache_file_name, cache_suffix, species))
+        return Image.open(cache.get_full_filename(cache_file_name, cache_suffix, species))
 
     # Wasn't in cache so get image via the web.
     # Load image and store it into a tmp file. Had to use requests lib and

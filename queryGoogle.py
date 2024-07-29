@@ -32,10 +32,10 @@ def scrape_google_for_images(query_str):
     url = f'https://www.google.com/search?q={q}'
 
     # Query google search
-    print(f'Querying google search using url={url}')
+    print(f'Scraping google search using url={url}')
     response = urlopen(url)
     response_as_str = response.read().decode(response.headers.get_content_charset())
-    print(f'Response was {len(response_as_str)} characters long')
+    print(f'Scraping response was {len(response_as_str)} characters long')
 
     # Find all the urls of the images and add them to image_urls
     image_urls = []
@@ -96,16 +96,16 @@ def get_url_list_for_image_search_query(query_str):
     print(f'Searching for images using "{query_str}"')
     try:
         image_urls = query_google_images_api(query_str)
+        raise HTTPError("TESTING... FIXME")
     except HTTPError as err:
-        print('Got error using the Google API. Therefore trying scraping Google as backup.')
+        print(f'Got error using the Google API. Therefore trying scraping Google as backup. {err}')
         image_urls = scrape_google_for_images(query_str)
         if image_urls is None or len(image_urls) == 0:
             # Will use default url for an image so at least get something
             default_link = 'https://www.allaboutbirds.org/guide/assets/photo/304461551-480px.jpg'
-            print(f'Error occurred trying to access Google API to find appropriate images. {err}. '
-                  f'Using default link {default_link}')
+            print(f'Did not successfully find image via scraping Google site. Therefore '
+                  f'using default image link {default_link}')
             image_urls = [default_link]
-            return image_urls
 
     return image_urls
 

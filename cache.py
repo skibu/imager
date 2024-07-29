@@ -23,12 +23,13 @@ def proper_filename(filename):
     return filename.replace(" ", "_").replace("'", "")
 
 
-def get_filename(name, suffix='', subdir=''):
+def get_full_filename(name, suffix='', subdir=''):
     """
-    Returns the filename for the cached file. Will have suffix appended.
+    Returns the full filename for the cached file. Will have suffix appended.
     :param name: of the object being stored. Can be a string or a hash of  URL
     :param suffix: blank if specified in name. Otherwise .wav, .png, or .json, etc
-    :param subdir: subdirectory. Useful if want to add species
+    :param subdir: subdirectory. Useful if want to add species. The specified name
+    will be processed into a proper file name (e.g. no blanks nor single quotes)
     :return: the full filename of the file in the cache
     """
     # Determine directory where cache stored. Thought might use tempfile.gettempdir() but that directory would
@@ -44,11 +45,11 @@ def get_filename(name, suffix='', subdir=''):
     return filename
 
 
-def write_to_cache(data, name, suffix='', subdir=''):
+def write_to_cache(data, filename, suffix='', subdir=''):
     """
     Writes data to a file so that it is cached
     :param data: data to be cached. Can be string or bytes. If string then is converted to bytes.
-    :param name: if URL should use str(cache.stable_hash(url))
+    :param filename: if working with a URL should use str(cache.stable_hash(url)) as filename
     :param suffix: blank if specified in name. Otherwise .wav, .png, or .json, etc
     :param subdir: subdirectory. Useful if want to add species
     """
@@ -56,40 +57,42 @@ def write_to_cache(data, name, suffix='', subdir=''):
     if isinstance(data, str):
         data = bytes(data, 'utf-8')
 
-    filename = get_filename(name, suffix, subdir)
-    file = open(filename, 'wb')
+    full_filename = get_full_filename(filename, suffix, subdir)
+    print(f'Writing cache file={full_filename}')
+    file = open(full_filename, 'wb')
     file.write(data)
     file.close()
 
 
-def file_exists(name, suffix='', subdir=''):
+def file_exists(filename, suffix='', subdir=''):
     """
     Returns true if file exists
-    :param name: if URL should use str(hash(url))
+    :param filename: if URL should use str(hash(url))
     :param suffix: blank if specified in name. Otherwise .wav, .png, or .json, etc
     :param subdir: subdirectory. Useful if want to add species
     :return: true if file exists
     """
-    exists =  os.path.isfile(get_filename(name, suffix, subdir))
+    exists =  os.path.isfile(get_full_filename(filename, suffix, subdir))
 
     if not exists:
-        print(f'File {name}{suffix} does not exist in cache so will need to create the data')
+        print(f'File {filename}{suffix} does not exist in cache so will need to create the data')
 
     return exists
 
 
-def read_from_cache(name, suffix='', subdir=''):
+def read_from_cache(filename, suffix='', subdir=''):
     """
     Reads and returns data from file.
     Note: if reading json from cache and need to convert it to a Python object then use:
       return json.loads(json_data, object_hook=lambda d: SimpleNamespace(**d))
-    :param name: if URL should use str(hash(url))
+    :param filename: if URL should use str(hash(url))
     :param suffix: blank if specified in name. Otherwise .wav, .png, or .json, etc
     :param subdir: subdirectory. Useful if want to add species
-    :return: the data stored in the file
+    :return: the str sdata stored in the file
     """
-    filename = get_filename(name, suffix, subdir)
-    file = open(filename, 'rb')
+    full_filename = get_full_filename(filename, suffix, subdir)
+    print(f'Reading cache file={full_filename}')
+    file = open(full_filename, 'rb')
     data = file.read()
     file.close()
     return data
