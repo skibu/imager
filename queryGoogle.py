@@ -18,6 +18,7 @@ count = 20 # Number of images to return per Google Search API query
 
 def scrape_google_for_images(query_str):
     """
+    DEPRECATED - Doesn't actually work
     Scrapes the regular google.com search site to get list of urls for images that match
     the query string. The nice thing about this method is that it doesn't need API key and
     is therefore not rate limited.
@@ -96,7 +97,6 @@ def get_url_list_for_image_search_query(query_str):
     print(f'Searching for images using "{query_str}"')
     try:
         image_urls = query_google_images_api(query_str)
-        raise HTTPError("TESTING... FIXME")
     except HTTPError as err:
         print(f'Got error using the Google API. Therefore trying scraping Google as backup. {err}')
         image_urls = scrape_google_for_images(query_str)
