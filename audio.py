@@ -5,7 +5,7 @@ import requests
 
 from pydub import AudioSegment, silence
 from pydub.effects import normalize
-from pydub.playback import play # Just for if want to play audio
+from pydub.playback import play  # Just for if want to play audio
 
 import cache
 
@@ -34,16 +34,16 @@ def get_wav_file(parsed_qs):
     Norns requires.
     :param parsed_qs: query string info. The important parameter is 'url' for link to an mp3. Might work with other
     formats!?! Also provides species name 's' which is used in caching
-    :return: bytes that contains the wav data. The data is always gzipped to reduce the size of the large files.
+    :return: IOBytes that contains the wav data. The data is always gzipped to reduce the size of the large files.
     """
 
     # Constants
-    max_clip_start_msec = 10000 # For when voice intro ends and actual bird sounds start
+    max_clip_start_msec = 10000  # For when voice intro ends and actual bird sounds start
 
     # Get from cache if can
     species = parsed_qs['s'][0]
     url = parsed_qs['url'][0]
-    cache_file_name = 'audio_' +cache.stable_hash_str(url)
+    cache_file_name = 'audio_' + cache.stable_hash_str(url)
     cache_suffix = '.wav.gz'
     if cache.file_exists(cache_file_name, cache_suffix, species):
         return io.BytesIO(cache.read_from_cache(cache_file_name, cache_suffix, species))
@@ -51,7 +51,7 @@ def get_wav_file(parsed_qs):
     # Determine max length of clip to be returned
     max_clip_msec_param = parsed_qs.get('max_msec')
     if max_clip_msec_param is None or len(max_clip_msec_param) == 0:
-        max_clip_msec = 30000 # Default value
+        max_clip_msec = 30000  # Default value
     else:
         max_clip_msec = max_clip_msec_param[0]
 
@@ -59,7 +59,7 @@ def get_wav_file(parsed_qs):
     mp3 = requests.get(url)
 
     # Process the sound. Just use first ~40 seconds so that processing doesn't get bogged down on really long clips
-    sound = AudioSegment.from_mp3(BytesIO(mp3.content))[:max_clip_msec+max_clip_start_msec]
+    sound = AudioSegment.from_mp3(BytesIO(mp3.content))[:max_clip_msec + max_clip_start_msec]
 
     # Try to get rid of any voice introduction to the clip. The voice intros appear to be consistently
     # separated by half second or so of silence. Found that had to reduce the silence_thresh to -70.0 even
@@ -91,4 +91,6 @@ def get_wav_file(parsed_qs):
     compressed_bytes = gzip.compress(buffer_bytes)
     cache.write_to_cache(compressed_bytes, cache_file_name, cache_suffix, species)
 
-    return buffer
+    print(f'Wrote wave file to {cache_file_name} for url {url}')
+
+    return io.BytesIO(compressed_bytes)
