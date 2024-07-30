@@ -22,31 +22,31 @@ from imageProcessor import load_and_process_image
 # NOTE: had to install webscraper "pip install html-table-parser-python3"
 
 
-def wav_response(wav_data, start_response, http_accept_encoding):
+def wav_response(compressed_wav_data, start_response, http_accept_encoding):
     """
     Creates a http response for a wav audio file. Can return either compressed
     or uncompressed data, depending on the request Content-Encoding header.
-    :param wav_data: IOBytes the data, in compressed format, to be returned
+    :param compressed_wav_data: IOBytes the data, in compressed format, to be returned
     :param start_response:
     :param http_accept_encoding: so can determine if should reply with compression or not
     :return: IOBytes containing the data bytes for the full reply
     """
-    if wav_data is None:
+    if compressed_wav_data is None:
         return error_response("Could not load image", start_response)
 
     status = '200 OK'
     response_headers = [('Content-Type', 'audio/wav')]
-    wav_data.seek(0)
-    return_data = wav_data
+    compressed_wav_data.seek(0)
 
     # If gzip compression is accepted then send back already compressed wav data
     if 'gzip' in http_accept_encoding:
         # Using compression
         response_headers.append(('Content-Encoding', 'gzip'))
+        return_data = compressed_wav_data
     else:
-        # Request not accepting compressed data so need to need to uncompress the compressed wav data
+        # Request not accepting compressed data so need to uncompress the compressed wav data
         # and use it as return_data
-        uncompressed_bytes = gzip.decompress(wav_data.read())
+        uncompressed_bytes = gzip.decompress(compressed_wav_data.read())
         return_data = io.BytesIO(uncompressed_bytes)
 
     # Finish up the response headers
