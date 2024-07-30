@@ -329,13 +329,14 @@ class EBird:
         if self.__supplemental_species_config_cache is not None:
             return self.__supplemental_species_config_cache
 
-        # Read in and convert JSON to a python object
-        json_data = cache.read_from_cache('supplementalSpeciesConfig.json')
-        try:
-          supplemental_species = json.loads(json_data)
-        except json.decoder.JSONDecodeError as err:
-            print(f'Error parsing supplementalSpeciesConfig.json {err}')
-            return {}
+        # Read in supplemental data and convert JSON to a python object
+        with open('data/supplementalSpeciesConfig.json', 'rb') as file:
+            json_data = file.read()
+            try:
+                supplemental_species = json.loads(json_data)
+            except json.decoder.JSONDecodeError as err:
+                print(f'Error parsing supplementalSpeciesConfig.json {err}')
+                return {}
 
         # Convert to a dictionary so can look up data by species_name easily
         supplemental_species_dict = {}
