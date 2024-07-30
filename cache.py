@@ -100,7 +100,7 @@ def read_from_cache(filename, suffix='', subdir=''):
 
 def erase_cache():
     """
-    Does system call to remove all the server side cache files. This was fresh data can be generated and used.
+    Does system call to remove all the server side cache files. This way fresh data can be generated and used.
     Important for if update the supplementalSpeciesConfig.json file.
     :return:
     """
