@@ -79,21 +79,21 @@ class EBird:
 
             meta_element = li.find('div', class_='ResultsList-meta')
             user_date_loc_element = meta_element.find('div', class_='userDateLoc')
-            author_element = user_date_loc_element.find('a')
-            # Usual author name is in a <a> element but sometimes it is in a <span>
-            if author_element is not None:
-                author = author_element.text
-            else:
-                # There is no explicit author <a> link so the author info must be in the next <span>
-                author = user_date_loc_element.find('span').text
 
-            date_element = user_date_loc_element.find('time')
+            # Usually author name is in a <a> element but sometimes it is in a <span>
+            author_element = user_date_loc_element.find(['a','span'])
+            author = author_element.text
+
+            # Usually date is in a <time> element but sometimes it is in a span (if it is unknown for example0
+            date_element = author_element.find_next(['time','span'])
             date = date_element.text
 
             # Since sometimes author is also in an span need to use date_element.find_next() to
             # dependably get the location span
             loc_element = date_element.find_next('span')
             loc = loc_element.text
+
+            print(f'FIXME author={author} date={date} loc={loc}')
 
             audio_info_list.append({'author': author,
                                     'date': date,
@@ -137,15 +137,13 @@ class EBird:
 
             meta_element = li.find('div', class_='ResultsList-meta')
             user_date_loc_element = meta_element.find('div', class_='userDateLoc')
-            author_element = user_date_loc_element.find('a')
-            # Usual author name is in a <a> element but sometimes it is in a <span>
-            if author_element is not None:
-                author = author_element.text
-            else:
-                # There is no explicit author <a> link so the author info must be in the next <span>
-                author = user_date_loc_element.find('span').text
 
-            date_element = user_date_loc_element.find('time')
+            # Usually author name is in a <a> element but sometimes it is in a <span>
+            author_element = user_date_loc_element.find(['a', 'span'])
+            author = author_element.text
+
+            # Usually date is in a <time> element but sometimes it is in a span (if it is unknown for example0
+            date_element = author_element.find_next(['time','span'])
             date = date_element.text
 
             # Since sometimes author is also in an span need to use date_element.find_next() to
