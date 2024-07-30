@@ -93,8 +93,6 @@ class EBird:
             loc_element = date_element.find_next('span')
             loc = loc_element.text
 
-            print(f'FIXME author={author} date={date} loc={loc}')
-
             audio_info_list.append({'author': author,
                                     'date': date,
                                     'loc': loc,
