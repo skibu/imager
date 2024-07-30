@@ -46,12 +46,13 @@ class EBird:
         :param species_name: Which species want info for
         :return: list of objects containing image info for species
         """
-        print(f'In __get_audio_data_list_for_species(). Determining data for species={species_name}...')
+        print(f'Determining audio data, including, urls for species={species_name}...')
 
         # Determine the species code, which is needed for scraping the ebird site
         species_code = self.__get_species_code(species_name)
 
-        url = f'https://media.ebird.org/catalog?taxonCode={species_code}&mediaType=audio&sort=rating_rank_desc&view=list'
+        url = (f'https://media.ebird.org/catalog?taxonCode={species_code}'
+               f'&mediaType=audio&sort=rating_rank_desc&view=list')
 
         # Make request to the website
         print(f'Getting audio info for species={species_name} from url={url}')
@@ -109,12 +110,13 @@ class EBird:
         :param species_name: Which species want info for
         :return: list of objects containing image info for species
         """
-        print(f'In __get_image_data_list_for_species(). Determining data for species={species_name}...')
+        print(f'Determining image data, including urls, for species={species_name}...')
 
         # Determine the species code, which is needed for scraping the ebird site
         species_code = self.__get_species_code(species_name)
 
-        url = f'https://media.ebird.org/catalog?taxonCode={species_code}&mediaType=photo&sort=rating_rank_desc&view=list'
+        url = (f'https://media.ebird.org/catalog?taxonCode={species_code}'
+               f'&mediaType=photo&sort=rating_rank_desc&view=list')
 
         # Make request to the website
         print(f'Getting image info for species={species_name} from url={url}')
