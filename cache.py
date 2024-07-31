@@ -74,9 +74,6 @@ def file_exists(filename, suffix='', subdir=''):
     """
     exists = os.path.isfile(get_full_filename(filename, suffix, subdir))
 
-    if not exists:
-        print(f'File {filename}{suffix} does not exist in cache so will need to create the data')
-
     return exists
 
 
@@ -91,7 +88,6 @@ def read_from_cache(filename, suffix='', subdir=''):
     :return: the str data stored in the file
     """
     full_filename = get_full_filename(filename, suffix, subdir)
-    print(f'Reading cache file={full_filename}')
     file = open(full_filename, 'rb')
     data = file.read()
     file.close()

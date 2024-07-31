@@ -91,6 +91,6 @@ def get_wav_file(parsed_qs):
     compressed_bytes = gzip.compress(buffer_bytes)
     cache.write_to_cache(compressed_bytes, cache_file_name, cache_suffix, species)
 
-    print(f'Wrote wave file to {cache_file_name} for url {url}')
+    print(f'Stored audio in file {cache_file_name}{cache_suffix} for url {url}')
 
     return io.BytesIO(compressed_bytes)
