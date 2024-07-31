@@ -58,7 +58,6 @@ def write_to_cache(data, filename, suffix='', subdir=''):
         data = bytes(data, 'utf-8')
 
     full_filename = get_full_filename(filename, suffix, subdir)
-    print(f'Writing cache file={full_filename}')
     file = open(full_filename, 'wb')
     file.write(data)
     file.close()
