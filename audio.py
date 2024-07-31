@@ -5,7 +5,6 @@ import requests
 
 from pydub import AudioSegment, silence
 from pydub.effects import normalize
-from pydub.playback import play  # Just for if want to play audio
 
 import cache
 
@@ -38,7 +37,7 @@ def get_wav_file(parsed_qs):
     """
 
     # Constants
-    max_clip_start_msec = 10000  # For when voice intro ends and actual bird sounds start
+    max_clip_voice_msec = 14000  # For when voice intro ends and actual bird sounds start
 
     # Get from cache if can
     species = parsed_qs['s'][0]
@@ -58,8 +57,8 @@ def get_wav_file(parsed_qs):
     # Get the mp3 data
     mp3 = requests.get(url)
 
-    # Process the sound. Just use first ~40 seconds so that processing doesn't get bogged down on really long clips
-    sound = AudioSegment.from_mp3(BytesIO(mp3.content))[:max_clip_msec + max_clip_start_msec]
+    # Process the sound. Just use first ~44 seconds so that processing doesn't get bogged down on really long clips
+    sound = AudioSegment.from_mp3(BytesIO(mp3.content))[:max_clip_voice_msec + max_clip_msec]
 
     # Try to get rid of any voice introduction to the clip. The voice intros appear to be consistently
     # separated by half second or so of silence. Found that had to reduce the silence_thresh to -70.0 even
@@ -67,10 +66,29 @@ def get_wav_file(parsed_qs):
     # important to set seek_step to 25 since that makes the function run 25x, though then the boundaries are
     # of course not determined as accurately.
     silent_portions = silence.detect_silence(sound, min_silence_len=300, silence_thresh=-70.0, seek_step=25)
-    if len(silent_portions) > 0:
-        start, stop = silent_portions[0]
-        if stop < max_clip_start_msec:
-            sound = sound[stop:]
+
+    end_of_last_voice_silence = None
+    special_end_found = None
+    for silent_portion in silent_portions:
+        start, stop = silent_portion
+
+        # Look for last silence within the time that can have voice intro (max_clip_voice_msec).
+        # Example is https://cdn.download.ams.birds.cornell.edu/api/v2/asset/62320/mp3&s=American+Golden%2DPlover
+        if stop < max_clip_voice_msec:
+            print(f'Trimming audio to get rid of voice intro, silence_stop={stop}')
+            end_of_last_voice_silence = stop
+
+        # Look for first silence past max_clip_voice_msec, which probably indicates a second voice.
+        # Example is  https://cdn.download.ams.birds.cornell.edu/api/v2/asset/29385/mp3&s=Short-billed_Dowitcher
+        if start > max_clip_voice_msec:
+            print(f'Additional voice section found so trimming it off from the audio')
+            special_end_found = start
+            break
+
+    # Trim the sound to get rid of voice parts
+    non_voice_start = 0 if end_of_last_voice_silence is None else end_of_last_voice_silence
+    non_voice_end = special_end_found # Works because then using sound[start:None]
+    sound = sound[non_voice_start : non_voice_end]
 
     # Trim sound clip to final length now that have removed any possible intro
     sound = sound[0:max_clip_msec]
