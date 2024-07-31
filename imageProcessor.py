@@ -234,7 +234,7 @@ def load_and_process_image_for_url(url, parsed_qs):
     img_bytes.seek(0)
     cache.write_to_cache(img_bytes.read(), cache_file_name, cache_suffix, species)
 
-    print(f'Stored image in file {cache_file_name}{cache_suffix} for url {url}')
+    print(f'Stored image in file {cache.get_full_filename(cache_file_name, cache_suffix, species)} for url {url}')
 
     return processed_image
 
