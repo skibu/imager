@@ -14,6 +14,23 @@ def stable_hash_str(key: str) -> str:
     return m.hexdigest()[:12].upper()
 
 
+def file_identifier(url: str) -> str:
+    """
+    Returns the identifying part of the file name to be used to cache data associated with a URL.
+    Key thing is that if the URL is for a special cornell.edu asset/catalog item then should
+    use the catalog identifier, something like ML928372. This way can much more easily lookup the
+    original data. But if not a cornell catalog item, use a hash.
+    :param url: The object being cached was read from
+    :return: the identifying part of the file name to be used to cache data for a url
+    """
+    if url.find('cornell.edu') != -1 and url.find('/asset/') != -1:
+        # Special cornell URL so use the catalog number
+        after_asset = url[url.find('/asset/')+7:]
+        return 'ML' + after_asset[0:after_asset.find('/')]
+    else:
+        return stable_hash_str(url)
+
+
 def proper_filename(filename):
     """
     Converts the filename parameter to a proper filename by replacing spaces with '_' and removing apostrophes
