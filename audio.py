@@ -63,9 +63,10 @@ def get_wav_file(parsed_qs):
     # Try to get rid of any voice introduction to the clip. The voice intros appear to be consistently
     # separated by half second or so of silence. Found that had to reduce the silence_thresh to -70.0 even
     # though the db of a non-silent clip was just -38. But at least it works. And found that it is really
-    # important to set seek_step to 25 since that makes the function run 25x, though then the boundaries are
-    # of course not determined as accurately.
-    silent_portions = silence.detect_silence(sound, min_silence_len=300, silence_thresh=-70.0, seek_step=25)
+    # important to set seek_step to 20 since that makes the function run 20x, though then the boundaries are
+    # of course not determined as accurately. And found that needed small min_silence_len=50 so that would
+    # work for ML106633 wav file.
+    silent_portions = silence.detect_silence(sound, min_silence_len=50, silence_thresh=-70.0, seek_step=20)
 
     end_of_last_voice_silence = None
     special_end_found = None
