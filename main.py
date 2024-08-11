@@ -119,7 +119,7 @@ def handle_request(environ, start_response):
     # Found that get more appropriate pics if also specify "black and white" and "bird flying"
     parsed_qs = parse_qs(parsed_url.query, keep_blank_values=True)
     match parsed_url.path:
-        case '/speciesList':
+        case '/allSpeciesList':
             # Returns in json a list of all species
             return json_response(ebird.get_species_list_json(), start_response)
         case '/groupsList':
