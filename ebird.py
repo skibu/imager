@@ -101,6 +101,11 @@ class EBird:
                                     'tagLabel': tag_label_text,
                                     'tagContent': tag_content_text})
 
+            # Just use 10 best. If used more then would rarely have cache hits. And they
+            # are supposedly listed in order of ratings. Better to just use the 10 best.
+            if len(audio_info_list) >= 10:
+                break
+
         return audio_info_list
 
     def __get_image_data_list_for_species(self, species_name):
@@ -165,6 +170,11 @@ class EBird:
                                     'loc': loc,
                                     'image_url': image_url,
                                     'tags': found_tags})
+
+            # Just use 10 best. If used more then would rarely have cache hits. And they
+            # are supposedly listed in order of ratings. Better to just use the 10 best.
+            if len(image_info_list) >= 10:
+                break
 
         return image_info_list
 
