@@ -118,34 +118,33 @@ def handle_request(environ, start_response):
     # Determine the query string to use for the Google API.
     # Found that get more appropriate pics if also specify "black and white" and "bird flying"
     parsed_qs = parse_qs(parsed_url.query, keep_blank_values=True)
-    match parsed_url.path:
-        case '/allSpeciesList':
-            # Returns in json a list of all species
-            return json_response(ebird.get_species_list_json(), start_response)
-        case '/groupsList':
-            # Returns in json a list of all species
-            return json_response(ebird.get_group_list_json(), start_response)
-        case '/speciesForGroup':
-            return json_response(ebird.get_species_for_group_json(parsed_qs['g'][0]), start_response)
-        case '/dataForSpecies':
-            # Returns in json a list of image urls for the species. The client app can
-            # then determine which one to use
-            return json_response(ebird.get_species_info(parsed_qs['s'][0]), start_response)
-        case '/pngFile':
-            # Returns png file for the specified URL. Query string should specify 'url' and 's' for species.
-            image = load_and_process_image(parsed_qs)
-            return image_response(image, start_response)
-        case '/wavFile':
-            # Loads wav file for specified url and species
-            http_accept_encoding = environ['HTTP_ACCEPT_ENCODING'] if 'HTTP_ACCEPT_ENCODING' in environ else ''
-            return wav_response(get_wav_file(parsed_qs), start_response, http_accept_encoding)
-        case '/eraseCache':
-            # Gets rid of all the *Cache.json files so that new data will be used
-            cache.erase_cache()
-            return json_response('Cache cleared', start_response)
-        case _:
-            # In case unknown command specified
-            return error_response('No such command ' + parsed_url.path, start_response)
+    if parsed_url.path == '/allSpeciesList':
+        # Returns in json a list of all species
+        return json_response(ebird.get_species_list_json(), start_response)
+    elif parsed_url.path == '/groupsList':
+        # Returns in json a list of all species
+        return json_response(ebird.get_group_list_json(), start_response)
+    elif parsed_url.path == '/speciesForGroup':
+        return json_response(ebird.get_species_for_group_json(parsed_qs['g'][0]), start_response)
+    elif parsed_url.path == '/dataForSpecies':
+        # Returns in json a list of image urls for the species. The client app can
+        # then determine which one to use
+        return json_response(ebird.get_species_info(parsed_qs['s'][0]), start_response)
+    elif parsed_url.path == '/pngFile':
+        # Returns png file for the specified URL. Query string should specify 'url' and 's' for species.
+        image = load_and_process_image(parsed_qs)
+        return image_response(image, start_response)
+    elif parsed_url.path == '/wavFile':
+        # Loads wav file for specified url and species
+        http_accept_encoding = environ['HTTP_ACCEPT_ENCODING'] if 'HTTP_ACCEPT_ENCODING' in environ else ''
+        return wav_response(get_wav_file(parsed_qs), start_response, http_accept_encoding)
+    elif parsed_url.path == '/eraseCache':
+        # Gets rid of all the *Cache.json files so that new data will be used
+        cache.erase_cache()
+        return json_response('Cache cleared', start_response)
+    else:
+        # In case unknown command specified
+        return error_response('No such command ' + parsed_url.path, start_response)
 
 
 # If run as main, then start the webserver
