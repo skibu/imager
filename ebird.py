@@ -349,13 +349,18 @@ class EBird:
 
         # Read in supplemental data and convert JSON to a python object
         logger.info(f'Generating supplemental species config info')
-        with open('data/supplementalSpeciesConfig.json', 'rb') as file:
-            json_data = file.read()
-            try:
-                supplemental_species = json.loads(json_data)
-            except json.decoder.JSONDecodeError as err:
-                logger.error(f'Error parsing supplementalSpeciesConfig.json {err}')
-                return {}
+        supplemental_file_name = 'data/supplementalSpeciesConfig.json'
+        try:
+            with open(supplemental_file_name, 'rb') as file:
+                json_data = file.read()
+                try:
+                    supplemental_species = json.loads(json_data)
+                except json.decoder.JSONDecodeError as err:
+                    logger.error(f'Error parsing supplementalSpeciesConfig.json {err}')
+                    return {}
+        except FileNotFoundError:
+            logger.warning(f'The supplemental file {supplemental_file_name} does not exist')
+            return {}
 
         # Convert to a dictionary so can look up data by species_name easily
         supplemental_species_dict = {}
