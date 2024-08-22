@@ -1,6 +1,9 @@
 # For caching objects in files so that handling requests is much quicker
 import hashlib
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def stable_hash_str(key: str) -> str:
@@ -112,10 +115,13 @@ def read_from_cache(filename, suffix='', subdir=''):
 
 def erase_cache():
     """
-    Does system call to remove all the server side cache files. This way fresh data can be generated and used.
-    Important for if update the supplementalSpeciesConfig.json file.
-    :return:
+    Does system call to remove all the server side cache files. This way fresh
+    data can be generated and used. Important for if update the
+    supplementalSpeciesConfig.json file. Does not erase any of the wav or
+    image files, since those do not change and they are much more costly to
+    generate.
     """
+    logger.info("Erasing cached JSON files from the imager cache")
     dir_name = get_full_filename('')
     os.system(f'rm {dir_name}*Cache.json')
     os.system(f'rm {dir_name}*/*Cache.json')

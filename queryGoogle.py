@@ -1,13 +1,13 @@
 import json
-import os
 import random
-
+import logging
 from imageProcessor import load_and_process_image_for_url
 
 from urllib.request import urlopen
 from urllib.parse import quote
 from urllib.error import HTTPError
 
+logger = logging.getLogger(__name__)
 
 api = 'https://www.googleapis.com/customsearch/v1'
 api_key = 'AI''zaSyB9_wTwJ-''GOLIgD-EoT''9qxOm''-osRT__h0A'
@@ -33,10 +33,10 @@ def scrape_google_for_images(query_str):
     url = f'https://www.google.com/search?q={q}'
 
     # Query google search
-    print(f'Scraping google search using url={url}')
+    logger.info(f'Scraping google search using url={url}')
     response = urlopen(url)
     response_as_str = response.read().decode(response.headers.get_content_charset())
-    print(f'Scraping response was {len(response_as_str)} characters long')
+    logger.info(f'Scraping response was {len(response_as_str)} characters long')
 
     # Find all the urls of the images and add them to image_urls
     image_urls = []
@@ -66,7 +66,7 @@ def query_google_images_api(query_str):
     query_url = f'{api}?key={api_key}&cx={server_context}&q={q}&searchType=image&{color_type}'
 
     # Get the response of URL and convert response to json object containing just the important 'items' data
-    print(f'Querying Google Image API using={query_url}')
+    logger.info(f'Querying Google Image API using={query_url}')
     response = urlopen(query_url)
     data_json1 = json.loads(response.read())
 
@@ -94,16 +94,16 @@ def get_url_list_for_image_search_query(query_str):
     # First try the Google Search API since that provides more results. But if the API call
     # fails, likely due to more than 100 hits in a day, they try scraping the regular Google
     # search site.
-    print(f'Searching for images using "{query_str}"')
+    logger.info(f'Searching for images using "{query_str}"')
     try:
         image_urls = query_google_images_api(query_str)
     except HTTPError as err:
-        print(f'Got error using the Google API. Therefore trying scraping Google as backup. {err}')
+        logger.warning(f'Got error using the Google API. Therefore trying scraping Google as backup. {err}')
         image_urls = scrape_google_for_images(query_str)
         if image_urls is None or len(image_urls) == 0:
             # Will use default url for an image so at least get something
             default_link = 'https://www.allaboutbirds.org/guide/assets/photo/304461551-480px.jpg'
-            print(f'Did not successfully find image via scraping Google site. Therefore '
+            logger.warning(f'Did not successfully find image via scraping Google site. Therefore '
                   f'using default image link {default_link}')
             image_urls = [default_link]
 
@@ -130,7 +130,7 @@ def get_random_image_for_query(parsed_qs):
     random_index = random.randrange(0, len(image_urls))
 
     url = image_urls[random_index]
-    print(f'For query_str="{query_str}" random_index={random_index} so using URL {url}')
+    logger.info(f'For query_str="{query_str}" random_index={random_index} so using URL {url}')
 
     # Get the image and process it. Will use cache
     img = load_and_process_image_for_url(url, parsed_qs)

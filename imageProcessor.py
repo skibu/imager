@@ -1,34 +1,35 @@
 import tempfile
+from http.server import BaseHTTPRequestHandler
 from io import BytesIO
+from urllib.parse import urlparse, parse_qs
 
 import requests
 from PIL import Image, ImageOps, ImageEnhance
 from PIL.Image import Quantize
-
+import logging
 import cache
 
+logger = logging.getLogger(__name__)
 
-def process_image_for_norns(img: Image, parsed_qs: dict) -> Image:
+
+def process_image_for_norns(img: Image, debug: bool = False) -> Image:
     """
     Process the image so it can be used on a Norns. This included:
       - cropping the image so that important center part emphasized
       - convert to gray scale
       - transform to proper size (128x64)
-      - change colors so they are compatible with norne (4 bits of grayscale)
+      - change colors so they are compatible with Norns (4 bits of grayscale)
       - If a black on white image, invert colors so it looks better on Norns
       - return it as a png
-    :type parsed_qs: object
     :param img: the image to process
-    :param parsed_qs: query string that was used
+    :param debug: true if should display the interim images
     :return:
     """
-    debug = parsed_qs.get('debug') is not None
-
     if debug:
         img.show()
         img_h = img.histogram()
 
-    grayscale_img = grayscale(img, parsed_qs)
+    grayscale_img = grayscale(img, debug)
     if debug:
         grayscale_img.show('grayscale')
         grayscale_img_h = grayscale_img.histogram()
@@ -59,7 +60,7 @@ def shrink_to_norns_size(img: Image) -> Image:
     """
     w = img.width
     h = img.height
-    fraction = 64/img.height
+    fraction = 64 / img.height
 
     return img.resize((int(w * fraction), 64))
 
@@ -113,7 +114,7 @@ def crop(img: Image) -> Image:
     :param img:
     :return: cropped image
     """
-    horiz_fraction = 0.0 # currently not cropping horizontally so image will be as wide as possible
+    horiz_fraction = 0.0  # currently not cropping horizontally so image will be as wide as possible
     vert_fraction = 0.08
 
     # First crop out white border.
@@ -150,15 +151,13 @@ def crop(img: Image) -> Image:
     return img.crop(box)
 
 
-def grayscale(img: Image, parsed_qs: dict) -> Image:
+def grayscale(img: Image, debug: bool = False) -> Image:
     """
     Convert image to grayscale and then reduces it to 16 gray levels, which is what Norns needs
-    :type parsed_qs: object
     :param img: the image to process
-    :param parsed_qs: query string that was used
+    :param debug: True if should show interim images during processing
     :return: image converted to 16 color grayscale
     """
-    debug = parsed_qs.get('debug') is not None
 
     # Convert to grayscale
     grayscale_img = img.convert('L')
@@ -186,30 +185,31 @@ def grayscale(img: Image, parsed_qs: dict) -> Image:
     return sixteen_color_img
 
 
-def load_and_process_image_for_url(url, parsed_qs):
+def load_and_process_image_for_url(url: str, species: str, debug: bool = False) -> Image:
     """
     Gets image for the url and processes it. Uses a cache so don't have to process
     same images again.
 
     :param url: link to image to load
-    :param parsed_qs: Specifies species for caching. Also, so can pass extra params to process_image_for_norns()
+    :param species: Specifies species for caching.
+    :param debug: True if should put out additional debugging info
     :return: the image processed to work on Norns device
     """
     # Get from cache if can
-    species = parsed_qs['s'][0]
     cache_file_name = 'image_' + cache.file_identifier(url)
     cache_suffix = '.png'
     if cache.file_exists(cache_file_name, cache_suffix, species):
         # The image is in the cache as a file. But don't want to just return the
         # data in the file. Instead, need to return an Image. Therefore create
         # an image using the cache file name.
+        logger.info(f'Getting cached image for url={url}')
         return Image.open(cache.get_full_filename(cache_file_name, cache_suffix, species))
 
     # Wasn't in cache so get image via the web.
     # Load image and store it into a tmp file. Had to use requests lib and
     # set the headers to look like a browser to get access to certain images
     # where server apparently doesn't want to provide them to a python script.
-    print(f'Getting image from url={url}')
+    logger.info(f'Processing image from url={url}')
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 '
                              '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'}
     response = requests.get(url, headers=headers)
@@ -223,7 +223,7 @@ def load_and_process_image_for_url(url, parsed_qs):
         img = Image.open(tmp_file)
 
         # Convert image so suitable for Norns special display
-        processed_image = process_image_for_norns(img, parsed_qs)
+        processed_image = process_image_for_norns(img, debug)
 
     # For debugging show each image returned
     processed_image.show("returned image")
@@ -234,17 +234,22 @@ def load_and_process_image_for_url(url, parsed_qs):
     img_bytes.seek(0)
     cache.write_to_cache(img_bytes.read(), cache_file_name, cache_suffix, species)
 
-    print(f'Stored image in file {cache.get_full_filename(cache_file_name, cache_suffix, species)} for url {url}')
+    logger.info(f'Stored image in file {cache.get_full_filename(cache_file_name, cache_suffix, species)} for url {url}')
 
     return processed_image
 
 
-def load_and_process_image(parsed_qs):
+def load_and_process_image(handler: BaseHTTPRequestHandler) -> Image:
     """
     Calls load_and_process_image_for_url using url specified by the query string. Uses cache via
     load_and_process_image_for_url()
-    :param parsed_qs: query string
+    :param handler: The BaseHTTPRequestHandler which provides 'url' and the 's' query string params
     :return: the image
     """
+    parsed_url = urlparse(handler.path)
+    parsed_qs = parse_qs(parsed_url.query, keep_blank_values=True)
+
     url = parsed_qs['url'][0]
-    return load_and_process_image_for_url(url, parsed_qs)
+    species = parsed_qs['s'][0]
+    debug = parsed_qs.get('debug') is not None
+    return load_and_process_image_for_url(url, species, debug)
