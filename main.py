@@ -31,4 +31,6 @@ if __name__ == "__main__":
                         format='%(asctime)s.%(msecs)03d - %(levelname)s : %(message)s',
                         datefmt='%m/%d/%y %H:%M:%S')
 
+    logger.info('====================== Starting imager =============================')
+    
     start_webserver()
