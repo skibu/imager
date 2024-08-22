@@ -16,12 +16,13 @@ collections.Callable = collections.abc.Callable
 
 
 class EBird:
-    logger = logging.getLogger(__name__)
+    logger = None
 
     def __init__(self):
         """
-        Loads in the key data at startup so that requests are fast
+        Initializes the logger and loads in the key data at startup so that requests are fast
         """
+        self.logger = logging.getLogger(__name__)
         self.__get_groups_dictionary()
 
     def __get_species_code(self, species_name):
