@@ -14,10 +14,10 @@ from queryGoogle import query_google_images_api
 # https://stackoverflow.com/questions/69515086/error-attributeerror-collections-has-no-attribute-callable-using-beautifu
 collections.Callable = collections.abc.Callable
 
-logger = logging.getLogger(__name__)
-
 
 class EBird:
+    logger = logging.getLogger(__name__)
+
     def __init__(self):
         """
         Loads in the key data at startup so that requests are fast
