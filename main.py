@@ -5,7 +5,7 @@
 import logging
 import os
 
-logging_dir = '/tmp/imagerCache/logs/'
+logging_dir = '/usr/local/imagerCache/logs/'
 os.makedirs(logging_dir, mode=0o777, exist_ok=True)
 logging.basicConfig(filename=logging_dir + 'imager.log', level=logging.DEBUG,
                     format='%(asctime)s.%(msecs)03d - %(levelname)s : %(message)s',

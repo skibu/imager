@@ -54,8 +54,8 @@ def get_full_filename(name, suffix='', subdir=''):
     """
     # Determine directory where cache stored. Thought might use tempfile.gettempdir() but that directory would
     # change each time the app is run and would therefore not cache info across restarts. Therefore just
-    # using "/tmp/imagerCache" even though that is not necessarily portable.
-    directory = '/tmp/imagerCache/'
+    # using "/usr/local/imagerCache" even though that is not necessarily portable.
+    directory = '/usr/local/imagerCache/'
     full_directory = directory + proper_filename(subdir) + "/"
 
     # Make sure the directory exists
