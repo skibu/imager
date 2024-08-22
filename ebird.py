@@ -14,6 +14,8 @@ from queryGoogle import query_google_images_api
 # https://stackoverflow.com/questions/69515086/error-attributeerror-collections-has-no-attribute-callable-using-beautifu
 collections.Callable = collections.abc.Callable
 
+logger = logging.getLogger()
+
 
 class EBird:
 
@@ -21,7 +23,6 @@ class EBird:
         """
         Initializes the logger and loads in the key data at startup so that requests are fast
         """
-        self.logger = logging.getLogger()
         self.__get_groups_dictionary()
 
     def __get_species_code(self, species_name):
@@ -35,7 +36,7 @@ class EBird:
         taxonomy_dict = self.__get_taxonomy_dictionary()
         unified_species_name = self.__unified_name(species_name)
         if unified_species_name not in taxonomy_dict:
-            self.logger.warning(f'Species={species_name} not found in ebird.get_species_info()')
+            logger.warning(f'Species={species_name} not found in ebird.get_species_info()')
             return None
         species_data = taxonomy_dict[unified_species_name]
 
@@ -48,7 +49,7 @@ class EBird:
         :param species_name: Which species want info for
         :return: list of objects containing image info for species
         """
-        self.logger.info(f'Determining audio data, including, urls for species={species_name}...')
+        logger.info(f'Determining audio data, including, urls for species={species_name}...')
 
         # Determine the species code, which is needed for scraping the ebird site
         species_code = self.__get_species_code(species_name)
@@ -57,7 +58,7 @@ class EBird:
                f'&mediaType=audio&sort=rating_rank_desc&view=list')
 
         # Make request to the website
-        self.logger.info(f'Getting audio info for species={species_name} from url={url}')
+        logger.info(f'Getting audio info for species={species_name} from url={url}')
         req = requests.get(url)
 
         # Parse the returned html
@@ -117,7 +118,7 @@ class EBird:
         :param species_name: Which species want info for
         :return: list of objects containing image info for species
         """
-        self.logger.info(f'Determining image data, including urls, for species={species_name}...')
+        logger.info(f'Determining image data, including urls, for species={species_name}...')
 
         # Determine the species code, which is needed for scraping the ebird site
         species_code = self.__get_species_code(species_name)
@@ -126,7 +127,7 @@ class EBird:
                f'&mediaType=photo&sort=rating_rank_desc&view=list')
 
         # Make request to the website
-        self.logger.info(f'Getting image info for species={species_name} from url={url}')
+        logger.info(f'Getting image info for species={species_name} from url={url}')
         req = requests.get(url)
 
         # Parse the returned html
@@ -208,7 +209,7 @@ class EBird:
         url = 'https://www.macaulaylibrary.org/guide-to-bird-sounds/track-list/'
 
         # Make request to the website
-        self.logger.info(f'Getting species data from url={url}')
+        logger.info(f'Getting species data from url={url}')
         req = requests.get(url)
 
         # Parse the returned html
@@ -269,7 +270,7 @@ class EBird:
         :return: the data dictionary
         """
         # Add each species data to the species dictionary
-        self.logger.info("Creating species dictionary...")
+        logger.info("Creating species dictionary...")
         species_dict = dict()
         for species_data in self.__get_track_data():
             list_for_species = species_dict.get(species_data['species'])
@@ -292,18 +293,18 @@ class EBird:
         """
         # Try getting from memory cache first
         if self.__taxonomy_dictionary_cache is not None:
-            self.logger.info(f'Using taxonomy dictionary from memory cache')
+            logger.info(f'Using taxonomy dictionary from memory cache')
             return self.__taxonomy_dictionary_cache
 
         # Try getting from file cache
         cache_file_name = "allEbirdSpeciesTaxonomyDictionaryCache.json"
         if cache.file_exists(cache_file_name):
-            self.logger.info(f'Using taxonomy dictionary from file cache')
+            logger.info(f'Using taxonomy dictionary from file cache')
             json_data = cache.read_from_cache(cache_file_name)
             return json.loads(json_data)
 
         # Load in the full taxonomy from ebird site
-        self.logger.info(f'Generating taxonomy dictionary because was not cached')
+        logger.info(f'Generating taxonomy dictionary because was not cached')
         url = "https://api.ebird.org/v2/ref/taxonomy/ebird?fmt=json "
         headers = {'x-ebirdapitoken': 'jfekjedvescr'}
         response = requests.get(url, headers=headers)
@@ -344,11 +345,11 @@ class EBird:
         :return: data for the supplemental species
         """
         if self.__supplemental_species_config_cache is not None:
-            self.logger.info(f'Using cached supplemental species config info')
+            logger.info(f'Using cached supplemental species config info')
             return self.__supplemental_species_config_cache
 
         # Read in supplemental data and convert JSON to a python object
-        self.logger.info(f'Generating supplemental species config info')
+        logger.info(f'Generating supplemental species config info')
         supplemental_file_name = 'data/supplementalSpeciesConfig.json'
         try:
             with open(supplemental_file_name, 'rb') as file:
@@ -356,10 +357,10 @@ class EBird:
                 try:
                     supplemental_species = json.loads(json_data)
                 except json.decoder.JSONDecodeError as err:
-                    self.logger.error(f'Error parsing supplementalSpeciesConfig.json {err}')
+                    logger.error(f'Error parsing supplementalSpeciesConfig.json {err}')
                     return {}
         except FileNotFoundError:
-            self.logger.warning(f'The supplemental file {supplemental_file_name} does not exist')
+            logger.warning(f'The supplemental file {supplemental_file_name} does not exist')
             return {}
 
         # Convert to a dictionary so can look up data by species_name easily
@@ -391,17 +392,17 @@ class EBird:
         """
         # Return memory cached value if exists
         if self.__groups_dictionary_cache is not None:
-            self.logger.info(f'Using memory cached groups dictionary')
+            logger.info(f'Using memory cached groups dictionary')
             return self.__groups_dictionary_cache
 
         # Use file cache if it exists
         cache_file_name = 'groupsCache.json'
         if cache.file_exists(cache_file_name):
-            self.logger.info(f'Using file cached groups dictionary')
+            logger.info(f'Using file cached groups dictionary')
             json_data = cache.read_from_cache(cache_file_name)
             return json.loads(json_data)
 
-        self.logger.info("Generating the groups dictionary...")
+        logger.info("Generating the groups dictionary...")
 
         # The return value. groups is a dictionary keyed on group name and containing list of species names
         groups = {}
@@ -416,7 +417,7 @@ class EBird:
             uni_name = self.__unified_name(species_name)
             if uni_name not in taxonomy:
                 # If can't find this species, even using unified name, in the taxonomy, then skip it
-                self.logger.warning(f'Could not find species "{species_name}" in taxonomy so skipping it.')
+                logger.warning(f'Could not find species "{species_name}" in taxonomy so skipping it.')
                 continue
             species = taxonomy[uni_name]
 
@@ -446,11 +447,11 @@ class EBird:
         # Try getting from cache first
         cache_file_name = "speciesTracksListCache.json"
         if cache.file_exists(cache_file_name):
-            self.logger.info(f'Using file cached species list {cache_file_name}')
+            logger.info(f'Using file cached species list {cache_file_name}')
             json_data = cache.read_from_cache(cache_file_name)
             return json.loads(json_data)
 
-        self.logger.info("Generating speciesTrackList...")
+        logger.info("Generating speciesTrackList...")
         species_dictionary = self.__get_species_tracks_dictionary()
         keys_list = list(species_dictionary.keys())
         keys_list.sort()
@@ -494,10 +495,10 @@ class EBird:
         # Try getting from file cache first
         cache_file_name = "speciesNamesListCache.json"
         if cache.file_exists(cache_file_name):
-            self.logger.info(f'Getting species names list from file cache {cache_file_name}')
+            logger.info(f'Getting species names list from file cache {cache_file_name}')
             return cache.read_from_cache(cache_file_name)
 
-        self.logger.info('Generating species name list json...')
+        logger.info('Generating species name list json...')
 
         # Get the list of species names
         species_list = self.__get_species_name_list()
@@ -523,16 +524,16 @@ class EBird:
         """
         # If in memory cache return it
         if self.__group_names_list_cache is not None:
-            self.logger.info(f'Getting the group name list from memory cache')
+            logger.info(f'Getting the group name list from memory cache')
             return self.__group_names_list_cache
 
         # Try getting from cache first
         cache_file_name = "groupNamesListCache.json"
         if cache.file_exists(cache_file_name):
-            self.logger.info(f'Getting the group name list from file cache {cache_file_name}')
+            logger.info(f'Getting the group name list from file cache {cache_file_name}')
             return cache.read_from_cache(cache_file_name)
 
-        self.logger.info('Determining group list json...')
+        logger.info('Determining group list json...')
 
         # Get the group info
         groups_dict = self.__get_groups_dictionary()
@@ -564,10 +565,10 @@ class EBird:
         # Return info from cache if available
         cache_file_name = 'speciesDataCache.json'
         if cache.file_exists(cache_file_name, subdir=species_name):
-            self.logger.info(f'Using file cached data for species={species_name} file={cache_file_name}')
+            logger.info(f'Using file cached data for species={species_name} file={cache_file_name}')
             return cache.read_from_cache(cache_file_name, subdir=species_name)
 
-        self.logger.info(f'Generating data for species={species_name}...')
+        logger.info(f'Generating data for species={species_name}...')
 
         # First, see if info for this species is in the supplemental file. This
         # way the supplemental file can override what is automatically determined
@@ -588,7 +589,7 @@ class EBird:
             taxonomy_dict = self.__get_taxonomy_dictionary()
             unified_species_name = self.__unified_name(species_name)
             if unified_species_name not in taxonomy_dict:
-                self.logger.warning(f'Species={species_name} not found in ebird.get_species_info()')
+                logger.warning(f'Species={species_name} not found in ebird.get_species_info()')
                 return None
             species_data = taxonomy_dict[unified_species_name]
 
