@@ -43,6 +43,7 @@ def get_wav_file(handler: BaseHTTPRequestHandler):
 
     # Constants
     max_clip_voice_msec = 14000  # For when voice intro ends and actual bird sounds start
+    min_bird_sound_msec = 7000   # Minimum amount of bird song expected after taking out silence
 
     parsed_url = urlparse(handler.path)
     parsed_qs = parse_qs(parsed_url.query, keep_blank_values=True)
@@ -79,6 +80,7 @@ def get_wav_file(handler: BaseHTTPRequestHandler):
     # work for ML106633 wav file.
     silent_portions = silence.detect_silence(sound, min_silence_len=50, silence_thresh=-70.0, seek_step=20)
 
+    initial_duration_msec = sound.duration_seconds * 1000
     end_of_last_voice_silence = None
     special_end_found = None
     for silent_portion in silent_portions:
@@ -86,7 +88,10 @@ def get_wav_file(handler: BaseHTTPRequestHandler):
 
         # Look for last silence within the time that can have voice intro (max_clip_voice_msec).
         # Example is https://cdn.download.ams.birds.cornell.edu/api/v2/asset/62320/mp3&s=American+Golden%2DPlover
-        if stop < max_clip_voice_msec:
+        # But also make sure that still getting significant bird sound and not getting unexpected
+        # silence towards the end of a short clip. Example of this issue is
+        # https://cdn.download.ams.birds.cornell.edu/api/v2/asset/100789631/mp3
+        if stop < max_clip_voice_msec and stop < initial_duration_msec - min_bird_sound_msec:
             logger.info(f'Trimming audio to get rid of voice intro, silence_stop={stop}')
             end_of_last_voice_silence = stop
 
