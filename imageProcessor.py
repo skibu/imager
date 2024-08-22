@@ -9,7 +9,7 @@ from PIL.Image import Quantize
 import logging
 import cache
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def process_image_for_norns(img: Image, debug: bool = False) -> Image:

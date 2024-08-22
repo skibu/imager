@@ -3,7 +3,7 @@ import hashlib
 import os
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def stable_hash_str(key: str) -> str:

@@ -12,7 +12,7 @@ from requestHandler import RequestHandler
 # NOTE: had to install webscraper "pip install html-table-parser-python3"
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def start_webserver():

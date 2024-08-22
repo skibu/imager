@@ -28,7 +28,7 @@ import cache
 # Cache of processed audio data, keyed by url
 _audio_cache = {}
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 def get_wav_file(handler: BaseHTTPRequestHandler):

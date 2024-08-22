@@ -11,7 +11,7 @@ from audio import get_wav_file
 from ebird import ebird
 from imageProcessor import load_and_process_image
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 
 class RequestHandler(BaseHTTPRequestHandler):

@@ -7,7 +7,7 @@ from urllib.request import urlopen
 from urllib.parse import quote
 from urllib.error import HTTPError
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 api = 'https://www.googleapis.com/customsearch/v1'
 api_key = 'AI''zaSyB9_wTwJ-''GOLIgD-EoT''9qxOm''-osRT__h0A'
