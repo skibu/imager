@@ -81,10 +81,18 @@ class EBird:
             tag_label_text = tag_span.text if tag_span is not None else None
             tag_content_text = tag_span.find_next_sibling('span').text if tag_span is not None else None
 
+            # Get the rating
             meta_element = li.find('div', class_='ResultsList-meta')
-            user_date_loc_element = meta_element.find('div', class_='userDateLoc')
+            rating_stars_element = meta_element.find('div', class_='RatingStars')
+            ratings_text = rating_stars_element.find('span').text
+            rating = ratings_text.replace('rating', '').strip()
+
+            # If poor rating then done since they are in order
+            if len(audio_info_list) > 0 and (not rating.isdigit() or int(rating) < 3):
+                break
 
             # Usually author name is in a <a> element but sometimes it is in a <span>
+            user_date_loc_element = meta_element.find('div', class_='userDateLoc')
             author_element = user_date_loc_element.find(['a', 'span'])
             author = author_element.text
 
@@ -101,6 +109,7 @@ class EBird:
                                     'date': date,
                                     'loc': loc,
                                     'audio_url': audio_url,
+                                    'rating': rating,
                                     'tagLabel': tag_label_text,
                                     'tagContent': tag_content_text})
 
@@ -143,10 +152,18 @@ class EBird:
             image = media.find('img')
             image_url = image.attrs['src']
 
+            # Get the rating
             meta_element = li.find('div', class_='ResultsList-meta')
-            user_date_loc_element = meta_element.find('div', class_='userDateLoc')
+            rating_stars_element = meta_element.find('div', class_='RatingStars')
+            ratings_text = rating_stars_element.find('span').text
+            rating = ratings_text.replace('rating', '').strip()
+
+            # If poor rating then done since they are in order
+            if len(image_info_list) > 0 and (not rating.isdigit() or int(rating) < 3):
+                break
 
             # Usually author name is in a <a> element but sometimes it is in a <span>
+            user_date_loc_element = meta_element.find('div', class_='userDateLoc')
             author_element = user_date_loc_element.find(['a', 'span'])
             author = author_element.text
 
@@ -172,6 +189,7 @@ class EBird:
                                     'date': date,
                                     'loc': loc,
                                     'image_url': image_url,
+                                    'rating': rating,
                                     'tags': found_tags})
 
             # Just use 10 best. If used more then would rarely have cache hits. And they
