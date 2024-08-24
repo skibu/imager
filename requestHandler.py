@@ -59,6 +59,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             msg = 'Exception for request ' + self.path + '\n' + traceback.format_exc()
             logger.error(msg)
             return self._error_response(msg)
+        finally:
+            logger.debug(f'Done processing request {parsed_url.path}')
 
     def _json_response(self, msg: str):
         # If no msg then return error
