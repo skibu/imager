@@ -58,10 +58,12 @@ class EBird:
                f'&mediaType=audio&sort=rating_rank_desc&view=list')
 
         # Make request to the website
-        logger.info(f'Getting audio info for species={species_name} from url={url}')
+        logger.info(f'Requesting audio info for species={species_name} from url={url}')
         req = requests.get(url)
+        logger.debug(f'Finished receiving audio info for species {species_name}')
 
         # Parse the returned html
+        logger.debug(f'Parsing audio info html for species {species_name}...')
         soup = BeautifulSoup(req.text, 'html.parser')
 
         audio_info_list = []
@@ -118,6 +120,8 @@ class EBird:
             if len(audio_info_list) >= 10:
                 break
 
+        logger.debug(f'Done processing audio data for species {species_name}')
+
         return audio_info_list
 
     def __get_image_data_list_for_species(self, species_name):
@@ -136,10 +140,12 @@ class EBird:
                f'&mediaType=photo&sort=rating_rank_desc&view=list')
 
         # Make request to the website
-        logger.info(f'Getting image info for species={species_name} from url={url}')
+        logger.info(f'Requesting image info for species={species_name} from url={url}')
         req = requests.get(url)
+        logger.debug(f'Finished receiving image info for species {species_name}')
 
         # Parse the returned html
+        logger.debug(f'Parsing image info html for species {species_name}...')
         soup = BeautifulSoup(req.text, 'html.parser')
 
         image_info_list = []
@@ -196,6 +202,8 @@ class EBird:
             # are supposedly listed in order of ratings. Better to just use the 10 best.
             if len(image_info_list) >= 10:
                 break
+
+        logger.debug(f'Done processing image info for species {species_name}')
 
         return image_info_list
 
