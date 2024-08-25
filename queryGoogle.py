@@ -4,7 +4,7 @@ import logging
 from imageProcessor import load_and_process_image_for_url
 
 from urllib.request import urlopen
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 from urllib.error import HTTPError
 
 logger = logging.getLogger()
@@ -70,17 +70,29 @@ def query_google_images_api(query_str):
     response = urlopen(query_url)
     data_json1 = json.loads(response.read())
 
-    # Get next page of results so that can have total of 20 images to choose from
-    response = urlopen(query_url + '&start=11')
-    data_json2 = json.loads(response.read())
+    # If ever want to provide more than 10 results then ten_results_is_enough should be set to false.
+    # Nice thing about doing just a single query is that are limited to 100 total queries per day.
+    ten_results_is_enough = True
+    if ten_results_is_enough:
+        combined_json_items = data_json1['items']
+    else:
+        # Get next page of results so that can have total of 20 images to choose from
+        response = urlopen(query_url + '&start=11')
+        data_json2 = json.loads(response.read())
 
-    combined_json =  data_json1['items'] + data_json2['items']
+        combined_json_items = data_json1['items'] + data_json2['items']
 
-    image_urls = []
-    for item in combined_json:
-        image_urls.append(item['link'])
+    # Add information for each image to the images_info list
+    images_info = []
+    for item in combined_json_items:
+        # Add url and use domain name for the title
+        image_info = {
+            'imageUrl': item['link'],
+            'title': urlparse(item['link']).hostname
+        }
+        images_info.append(image_info)
 
-    return image_urls
+    return images_info
 
 
 def get_url_list_for_image_search_query(query_str):

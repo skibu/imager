@@ -3,6 +3,8 @@ import json
 import json.decoder
 from typing import Any
 import logging
+from urllib.parse import urlparse
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -111,7 +113,7 @@ class EBird:
                                     'author': author,
                                     'date': date,
                                     'loc': loc,
-                                    'audio_url': audio_url,
+                                    'audioUrl': audio_url,
                                     'rating': rating,
                                     'tagLabel': tag_label_text,
                                     'tagContent': tag_content_text})
@@ -201,7 +203,7 @@ class EBird:
                                     'author': author,
                                     'date': date,
                                     'loc': loc,
-                                    'image_url': image_url,
+                                    'imageUrl': image_url,
                                     'rating': rating,
                                     'tags': found_tags})
 
@@ -612,11 +614,17 @@ class EBird:
             supplemental_species = supplemental_species_dict.get(species_name)
             image_search_query = supplemental_species['imageSearchQuery']
             image_list = query_google_images_api(image_search_query)
+
+            audio_data_list = supplemental_species['audioDataList']
+            for item in audio_data_list:
+                if item.get('title') is None:
+                    item['title'] = urlparse(item.audioUrl).netloc
+
             species_data = {
                 "speciesName": supplemental_species['speciesName'],
                 "groupName": supplemental_species['groupName'],
                 "imageDataList": image_list,
-                "audioDataList": supplemental_species['mp3s']}
+                "audioDataList": audio_data_list}
         else:
             # Get all the ebird info for the species
             taxonomy_dict = self.__get_taxonomy_dictionary()

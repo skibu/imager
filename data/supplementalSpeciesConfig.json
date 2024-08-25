@@ -3,17 +3,25 @@
   "speciesName": "Kamala",
   "groupName": "Memes",
   "imageSearchQuery": "image kamala brat coconut meme",
-  "mp3s": [
-    "https://us-tuna-sounds-files.voicemod.net/29f75ded-64af-4b8d-bfe9-62b6dfecb7ed-1720845421984.mp3"
+  "audioDataList": [
+    {
+      "audioUrl": "https://us-tuna-sounds-files.voicemod.net/29f75ded-64af-4b8d-bfe9-62b6dfecb7ed-1720845421984.mp3"
+    }
   ] 
  },
  {
   "speciesName": "Frogs",
   "groupName": "Non-Birds",
   "imageSearchQuery": "image frog in pond",
-  "mp3s": [
-    "https://cdn.pixabay.com/download/audio/2024/05/19/audio_f87a0bc409.mp3?filename=frog-sound-210348.mp3",
-    "https://cdn.pixabay.com/download/audio/2021/10/01/audio_ed96b241d9.mp3?filename=night-sound-frog-sound-8907.mp3"
+  "audioDataList": [
+    {
+      "audioUrl": "https://cdn.pixabay.com/download/audio/2024/05/19/audio_f87a0bc409.mp3?filename=frog-sound-210348.mp3",
+      "title": "Frog - Pixabay.com"
+    },
+    {
+      "audioUrl": "https://cdn.pixabay.com/download/audio/2021/10/01/audio_ed96b241d9.mp3?filename=night-sound-frog-sound-8907.mp3",
+      "title": "Night frog - Pixabay.com"
+    }
   ]
  }
 ]
