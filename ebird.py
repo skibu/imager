@@ -75,8 +75,8 @@ class EBird:
             header = li.find('div', class_='ResultsList-header')
             # Get the URL of the mp3 file. It is the first immediate child of header that is a <a>
             first_a = header.find('a', recursive=False)
-            catalog_number = first_a.text.replace('"', '').replace('ML', '')
-
+            full_catalog_number = first_a.text.replace('"', '') # Will be something like "ML483235"
+            catalog_number = full_catalog_number.replace('ML', '')
             audio_url = f'https://cdn.download.ams.birds.cornell.edu/api/v2/asset/{catalog_number}/mp3'
 
             tag_span = header.find('span', class_='ResultsList-label')
@@ -89,7 +89,7 @@ class EBird:
             ratings_text = rating_stars_element.find('span').text
             rating = ratings_text.replace('rating', '').strip()
 
-            # If poor rating then done since they are in order
+            # If poor rating then done since they are in order, as long as get at least two
             if len(audio_info_list) > 0 and (not rating.isdigit() or int(rating) < 3):
                 break
 
@@ -107,7 +107,8 @@ class EBird:
             loc_element = date_element.find_next('span')
             loc = loc_element.text
 
-            audio_info_list.append({'author': author,
+            audio_info_list.append({'catalog': full_catalog_number,
+                                    'author': author,
                                     'date': date,
                                     'loc': loc,
                                     'audio_url': audio_url,
@@ -154,6 +155,11 @@ class EBird:
         ol = soup.find('ol', class_="ResultsList")
         li_elements = ol.find_all('li')
         for li in li_elements:
+            # Get the catalog info
+            header = li.find('div', class_='ResultsList-header')
+            first_a = header.find('a', recursive=False)
+            full_catalog_number = first_a.text.replace('"', '') # Will be something like "ML483235"
+
             media = li.find('div', class_='ResultsList-media')
             image = media.find('img')
             image_url = image.attrs['src']
@@ -164,8 +170,8 @@ class EBird:
             ratings_text = rating_stars_element.find('span').text
             rating = ratings_text.replace('rating', '').strip()
 
-            # If poor rating then done since they are in order
-            if len(image_info_list) > 0 and (not rating.isdigit() or int(rating) < 3):
+            # If poor rating then done since they are in order, as long as get at least two
+            if len(image_info_list) >= 2 and (not rating.isdigit() or int(rating) < 3):
                 break
 
             # Usually author name is in a <a> element but sometimes it is in a <span>
@@ -191,7 +197,8 @@ class EBird:
                 content = label.find_next('span')
                 found_tags.append({'label': label.text, 'content': content.text})
 
-            image_info_list.append({'author': author,
+            image_info_list.append({'catalog': full_catalog_number,
+                                    'author': author,
                                     'date': date,
                                     'loc': loc,
                                     'image_url': image_url,
