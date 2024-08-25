@@ -226,7 +226,8 @@ def load_and_process_image_for_url(url: str, species: str, debug: bool = False) 
         processed_image = process_image_for_norns(img, debug)
 
     # For debugging show each image returned
-    processed_image.show("returned image")
+    if debug:
+        processed_image.show("returned image")
 
     # Convert Image to bytes and write to cache
     img_bytes = BytesIO()
