@@ -618,7 +618,7 @@ class EBird:
             audio_data_list = supplemental_species['audioDataList']
             for item in audio_data_list:
                 if item.get('title') is None:
-                    item['title'] = urlparse(item.audioUrl).netloc
+                    item['title'] = urlparse(item['audioUrl']).netloc
 
             species_data = {
                 "speciesName": supplemental_species['speciesName'],
