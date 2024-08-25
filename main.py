@@ -1,19 +1,5 @@
 #! /usr/bin/env python
 
-# Setup logging before importing other application files, which might do logging
-# right when they start up.
-import logging
-import os
-
-logging_dir = '/usr/local/imagerCache/logs/'
-os.makedirs(logging_dir, mode=0o777, exist_ok=True)
-logging.basicConfig(filename=logging_dir + 'imager.log', level=logging.DEBUG,
-                    format='%(asctime)s.%(msecs)03d - %(levelname)s : %(message)s',
-                    datefmt='%m/%d/%y %H:%M:%S')
-logger = logging.getLogger()
-logger.info('====================== Starting imager =============================')
-
-# Now can do reset of imports
 from http.server import ThreadingHTTPServer
 from requestHandler import RequestHandler
 

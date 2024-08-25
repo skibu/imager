@@ -1,5 +1,6 @@
 import gzip
 import logging
+import loggingConfig
 import traceback
 from http.server import BaseHTTPRequestHandler
 from io import BytesIO
@@ -11,8 +12,12 @@ from audio import get_wav_file
 from ebird import ebird
 from imageProcessor import load_and_process_image
 
+# The root logger
 logger = logging.getLogger()
 
+# Create separate logger for logging bad requests. This way they don't pollute the main log file
+logger_bad_requests = loggingConfig.setup_logger("bad_requests", 'bad_requests.log')
+logger_bad_requests.propagate = False
 
 class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -20,40 +25,53 @@ class RequestHandler(BaseHTTPRequestHandler):
         parsed_qs = parse_qs(parsed_url.query, keep_blank_values=True)
 
         try:
-            logger.info(f'{self.client_address[0]}: Handling request {self.path}')
             match parsed_url.path:
                 case '/allSpeciesList':
+                    logger.info(f'Handling request {self.path}')
+
                     # Returns in json a list of all species
                     json = ebird.get_species_list_json()
                     return self._json_response(json)
                 case '/groupsList':
+                    logger.info(f'Handling request {self.path}')
+
                     # Returns in json a list of all species
                     json = ebird.get_group_list_json()
                     return self._json_response(json)
                 case '/speciesForGroup':
+                    logger.info(f'Handling request {self.path}')
+
                     json = ebird.get_species_for_group_json(parsed_qs['g'][0])
                     return self._json_response(json)
                 case '/dataForSpecies':
+                    logger.info(f'Handling request {self.path}')
+
                     # Returns in json a list of image urls for the species. The client app can
                     # then determine which one to use
                     species_info = ebird.get_species_info(parsed_qs['s'][0])
                     return self._json_response(species_info)
                 case '/pngFile':
+                    logger.info(f'Handling request {self.path}')
+
                     # Returns png file for the specified URL. Query string should specify 'url' and 's' for species.
                     image = load_and_process_image(self)
                     return self._image_response(image)
                 case '/wavFile':
+                    logger.info(f'Handling request {self.path}')
+
                     # Loads wav file for specified and species, specified in query string by 'url' and 's'
                     wav_file_data = get_wav_file(self)
                     return self._wav_response(wav_file_data)
                 case '/eraseCache':
+                    logger.info(f'Handling request {self.path}')
+
                     # Gets rid of all the *Cache.json files so that new data will be used
                     cache.erase_cache()
                     return self._json_response('Cache cleared')
                 case _:
                     # In case unknown command specified
-                    msg = 'No such command ' + self.path
-                    logger.error(msg)
+                    msg = f'No such command {self.path}'
+                    logger_bad_requests.warn(f'{self.client_address[0]} : {msg}')
                     return self._error_response(msg)
         except Exception as e:
             msg = 'Exception for request ' + self.path + '\n' + traceback.format_exc()
