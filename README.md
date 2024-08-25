@@ -53,7 +53,10 @@ If using a Raspberry Pi one can simply modify the /etc/rc.local and add:
 # that /usr/local/imagerCache is created by user root, and
 # then change ownership of the directory to user pi so that
 # when imager is run as user pi it can write to the directory.
+# Also, when running the app, need to first cd into the imager
+# directory so that the supplemental data in the data sub-directory
+# can be found.
 mkdir -p /usr/local/imagerCache
 chown pi /usr/local/imagercache chgrp pi /usr/local/imagerCache
-sudo -H-u pi bash -c '/usr/bin/python3 /home/pi/imager/main.py' &
+sudo -H -u pi bash -c 'cd /home/pi/imager/; /usr/bin/python3 main.py' &
 ```
