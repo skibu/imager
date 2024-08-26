@@ -1,8 +1,8 @@
 import collections
 import json
 import json.decoder
-from typing import Any
 import logging
+from typing import Any
 from urllib.parse import urlparse
 
 import requests
@@ -44,6 +44,89 @@ class EBird:
 
         return species_data['speciesCode']
 
+    def __abbreviate_loc(self, loc_str: str):
+        """
+        Abbreviates loc string via substitution, such as "United States" => "USA".
+        This way the location takes up less valuable space when displayed.
+        List of codes is at https://www.iban.com/country-codes .
+        State ones are at
+        https://www.faa.gov/air_traffic/publications/atpubs/cnt_html/appendix_a.html
+        :param loc_str: location to be abbreviated
+        :return: abbreviated location
+        """
+        return (loc_str
+                .replace("United States", "USA")
+                .replace("Alabama", "AL")
+                .replace("Alaska", "AK")
+                .replace("Arizona", "AZ")
+                .replace("Arkansas", "AR")
+                .replace("American Samoa", "AS")
+                .replace("California", "CA")
+                .replace("Colorado", "CO")
+                .replace("Connecticut", "CT")
+                .replace("Delaware", "DE")
+                .replace("District of Columbia", "DC")
+                .replace("Florida", "FL")
+                .replace("Georgia", "GA")
+                .replace("Guam", "GU")
+                .replace("Hawaii", "HI")
+                .replace("Idaho", "ID")
+                .replace("Illinois", "IL")
+                .replace("Indiana", "IN")
+                .replace("Iowa", "IA")
+                .replace("Kansas", "KS")
+                .replace("Kentucky", "KY")
+                .replace("Louisiana", "LA")
+                .replace("Maine", "ME")
+                .replace("Maryland", "MD")
+                .replace("Massachusetts", "MA")
+                .replace("Michigan", "MI")
+                .replace("Minnesota", "MN")
+                .replace("Mississippi", "MS")
+                .replace("Missouri", "MO")
+                .replace("Montana", "MT")
+                .replace("Nebraska", "NE")
+                .replace("Nevada", "NV")
+                .replace("New Hampshire", "NH")
+                .replace("New Jersey", "NJ")
+                .replace("New Mexico", "NM")
+                .replace("New York", "NY")
+                .replace("North Carolina", "NC")
+                .replace("North Dakota", "ND")
+                .replace("Northern Mariana Islands", "MP")
+                .replace("Ohio", "OH")
+                .replace("Oklahoma", "OK")
+                .replace("Oregon", "OR")
+                .replace("Pennsylvania", "PA")
+                .replace("Puerto Rico", "PR")
+                .replace("Rhode Island	", "RI")
+                .replace("South Carolina	", "SC")
+                .replace("South Dakota	", "SD")
+                .replace("Tennessee", "TN")
+                .replace("Texas", "TX")
+                .replace("Trust Territories	", "TT")
+                .replace("Utah", "UT")
+                .replace("Vermont", "VT")
+                .replace("Virginia", "VA")
+                .replace("Virgin Islands	", "VI")
+                .replace("Washington", "WA")
+                .replace("West Virginia	", "WV")
+                .replace("Wisconsin", "WI")
+                .replace("Wyoming", "WY")
+
+                .replace("Brazil", "BRA")
+
+                .replace("Canada", "CAN")
+                .replace("Alberta", "AB")
+                .replace("Quebec", "QC")
+
+                .replace("Germany", "DEU")
+                .replace("India", "IND")
+                .replace("Saudi Arabia", "SAU")
+                .replace("South Africa", "S Africa")
+                .replace("Thailand", "THA")
+                )
+
     def __get_audio_data_list_for_species(self, species_name):
         """
         Scrapes ebird site to get info on best audio files for the specified species. Not cached since whoever
@@ -77,7 +160,7 @@ class EBird:
             header = li.find('div', class_='ResultsList-header')
             # Get the URL of the mp3 file. It is the first immediate child of header that is a <a>
             first_a = header.find('a', recursive=False)
-            full_catalog_number = first_a.text.replace('"', '') # Will be something like "ML483235"
+            full_catalog_number = first_a.text.replace('"', '')  # Will be something like "ML483235"
             catalog_number = full_catalog_number.replace('ML', '')
             audio_url = f'https://cdn.download.ams.birds.cornell.edu/api/v2/asset/{catalog_number}/mp3'
 
@@ -107,7 +190,7 @@ class EBird:
             # Since sometimes author is also in an span need to use date_element.find_next() to
             # dependably get the location span
             loc_element = date_element.find_next('span')
-            loc = loc_element.text
+            loc = self.__abbreviate_loc(loc_element.text)
 
             audio_info_list.append({'catalog': full_catalog_number,
                                     'author': author,
@@ -160,7 +243,7 @@ class EBird:
             # Get the catalog info
             header = li.find('div', class_='ResultsList-header')
             first_a = header.find('a', recursive=False)
-            full_catalog_number = first_a.text.replace('"', '') # Will be something like "ML483235"
+            full_catalog_number = first_a.text.replace('"', '')  # Will be something like "ML483235"
 
             media = li.find('div', class_='ResultsList-media')
             image = media.find('img')
@@ -188,7 +271,7 @@ class EBird:
             # Since sometimes author is also in an span need to use date_element.find_next() to
             # dependably get the location span
             loc_element = date_element.find_next('span')
-            loc = loc_element.text
+            loc = self.__abbreviate_loc(loc_element.text)
 
             # Get the tags like 'Behavior'
             tags_div = li.find('div', class_='ResultsList-tags')
