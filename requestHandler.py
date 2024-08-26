@@ -19,6 +19,7 @@ logger = logging.getLogger()
 logger_bad_requests = loggingConfig.setup_logger("bad_requests", 'bad_requests.log')
 logger_bad_requests.propagate = False
 
+
 class RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed_url = urlparse(self.path)
