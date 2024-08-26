@@ -113,6 +113,27 @@ def read_from_cache(filename, suffix='', subdir=''):
     return data
 
 
+def fill_species_cache():
+    """"
+    Gets list of species and for each one determines the data for the species and caches it
+    into a json file for the species. Pauses 2 seconds between each species so that don't
+    bog everything down.
+    """
+    from ebird import ebird
+    import time
+
+    logger.info("Caching all species...")
+    species_list = ebird.get_species_name_list()
+    for species_name in species_list:
+        logger.debug(f"Caching species: {species_name}")
+        ebird.get_species_info(species_name)
+
+        # Don't bog down server
+        time.sleep(2.0)
+
+    logger.info("Dont caching all species")
+
+
 def erase_cache():
     """
     Does system call to remove all the server side cache files. This way fresh

@@ -68,6 +68,11 @@ class RequestHandler(BaseHTTPRequestHandler):
                     # Gets rid of all the *Cache.json files so that new data will be used
                     cache.erase_cache()
                     return self._json_response('Cache cleared')
+                case '/fillSpeciesCache':
+                    logger.info(f'Handling request {self.path}')
+
+                    cache.fill_species_cache()
+                    return self._json_response('Species cache filled')
                 case _:
                     # In case unknown command specified
                     msg = f'No such command {self.path}'

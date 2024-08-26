@@ -443,7 +443,7 @@ class EBird:
         groups = {}
 
         # So that can limit which species are listed
-        species_name_list = self.__get_species_name_list()
+        species_name_list = self.get_species_name_list()
         taxonomy = self.__get_taxonomy_dictionary()
 
         # For each species name from __get_species_name_list...
@@ -501,7 +501,7 @@ class EBird:
 
         return all_species_list
 
-    def __get_species_name_list(self):
+    def get_species_name_list(self):
         """
         Returns list of species names in alphabetical order
         :return: list of species names
@@ -536,7 +536,7 @@ class EBird:
         logger.info('Generating species name list json...')
 
         # Get the list of species names
-        species_list = self.__get_species_name_list()
+        species_list = self.get_species_name_list()
 
         # Convert to JSON
         json_data = json.dumps(species_list, indent=4)
