@@ -128,6 +128,7 @@ class EBird:
                 .replace(", India", ", IND")
                 .replace(", Mexico", ", MEX")
                 .replace(", New Zealand", ", NZL")
+                .replace(", Russia", ", RUS")
                 .replace(", Saudi Arabia", ", SAU")
                 .replace(", South Africa", ", S Africa")
                 .replace(", Thailand", ", THA")
