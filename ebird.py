@@ -117,6 +117,9 @@ class EBird:
 
                 .replace(", Canada", ", CAN")
                 .replace(", Alberta", ", AB")
+                .replace(", British Columbia", ", BC")
+                .replace(", Newfoundland", ", NF")
+                .replace(", Ontario", ", ON")
                 .replace(", Quebec", ", QC")
 
                 .replace(", Brazil", ", BRA")
