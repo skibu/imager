@@ -49,7 +49,7 @@ class EBird:
         Abbreviates loc string via substitution, such as ", United States" => ", USA".
         This way the location takes up less valuable space when displayed. The commas
         are used so that won't get an inappropriate match for a city name.
-        List of codes is at https://www.iban.com/country-codes .
+        List of country codes is at https://www.iban.com/country-codes .
         State ones are at
         https://www.faa.gov/air_traffic/publications/atpubs/cnt_html/appendix_a.html
         :param loc_str: location to be abbreviated
@@ -124,13 +124,19 @@ class EBird:
 
                 .replace(", Brazil", ", BRA")
                 .replace(", Cayman Islands", ", Cayman Is")
+                .replace(", China", ", CHN")
+                .replace(", England", ", GB")
                 .replace(", Germany", ", DEU")
                 .replace(", India", ", IND")
+                .replace(", Israel", ", ISR")
                 .replace(", Mexico", ", MEX")
                 .replace(", New Zealand", ", NZL")
                 .replace(", Russia", ", RUS")
                 .replace(", Saudi Arabia", ", SAU")
+                .replace(", Scotland", ", GB-SCT")
                 .replace(", South Africa", ", S Africa")
+                .replace(", South Korea", ", KOR")
+                .replace(", Korea", ", KOR")
                 .replace(", Thailand", ", THA")
                 )
 
