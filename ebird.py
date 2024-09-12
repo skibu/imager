@@ -517,7 +517,7 @@ class EBird:
     def __get_groups_dictionary(self):
         """
         Provides the group list for the species specified in the species_list. Each group is a list of
-        species names within that group.
+        species names within that group. The groups will NOT be in alphabetical order.
         :return: dictionary of all groups. Keyed by group name and containing values of list of all
         species names for that group
         """
@@ -675,7 +675,7 @@ class EBird:
             group_names.append(group_name)
 
         # Convert sorted group names to a json str
-        json_data = json.dumps(sorted(group_names), indent=4)
+        json_data = json.dumps(sorted(group_names), indent=2)
 
         # Write to cache
         cache.write_to_cache(json_data, cache_file_name)
@@ -738,7 +738,7 @@ class EBird:
             species_data['audioDataList'] = audio_data_list
 
         # Convert the species data into json
-        json_data = json.dumps(species_data, indent=4)
+        json_data = json.dumps(species_data, indent=2)
 
         # Write to cache
         cache.write_to_cache(json_data, cache_file_name, subdir=species_name)
@@ -757,8 +757,16 @@ class EBird:
             return f'Error: group {group_name} does not exist'
 
         species_list = groups_dict[group_name]
-        json_data = json.dumps(species_list, indent=4)
+        json_data = json.dumps(species_list, indent=2)
         return json_data
+
+    def get_species_by_group_json(self):
+        """
+        Returns json consisting of list of species for each group
+        :return: list of species by group
+        """
+        groups_dict = self.__get_groups_dictionary()
+        return json.dumps(groups_dict, indent=2)
 
 
 # Global instantiation

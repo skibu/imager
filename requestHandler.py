@@ -44,6 +44,11 @@ class RequestHandler(BaseHTTPRequestHandler):
 
                     json = ebird.get_species_for_group_json(parsed_qs['g'][0])
                     return self._json_response(json)
+                case '/speciesByGroup':
+                    logger.info(f'Handling request {self.path}')
+
+                    json = ebird.get_species_by_group_json()
+                    return self._json_response(json)
                 case '/dataForSpecies':
                     logger.info(f'Handling request {self.path}')
 
