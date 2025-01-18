@@ -17,7 +17,7 @@ instructions for upgrading to a specific version of Python are at
  [https://itheo.tech/upgrading-to-python-312-on-your-raspberry-pi](https://itheo.tech/upgrading-to-python-312-on-your-raspberry-pi)
 
 You should also make sure that pip has been updated. Can use:
-`pip3.12 install —upgrade pip`
+`pip3.13 install —upgrade pip`
 or
 `python3 -m pip install --upgrade pip`
 
@@ -28,10 +28,12 @@ You also need the following libraries:
 ```
 sudo apt-get install libjpeg-dev
 python3 -m pip install --upgrade Pillow # or: pip install pillow
-pip install html-table-parser-python3
-pip install requests
-pip install pydub
-sudo pip install bs4
+pip3 install ffmpeg       # not certain this is explicitly needed
+pip3 install html-table-parser-python3
+pip3 install requests
+pip3 install pydub
+pip3 install audioop-lts  # If using Python >= 3.13
+pip3 install bs4
 ```
 
 ### Running app
